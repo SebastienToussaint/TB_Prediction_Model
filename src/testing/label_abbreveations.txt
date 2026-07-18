@@ -1,0 +1,28 @@
+Adenopathy : A
+Apical_Thickening : AT
+
+Cavity : C
+Clustered_Nodule_(2mm-5mm_apart) : CN25
+Calcified_Nodule : CN
+Calcification_(other_than_nodule&lymphnod) : CONL
+Calcified_lymph_node : CLN
+
+Linear_Density : LD
+
+Moderate_Infiltrate_(non-linear) : MI
+Miliary : M
+
+Other : O
+
+Pleural_Effusion : PE
+Pleural_Thickening_(non-apical) : PT
+
+Retraction : R
+
+Small_Infiltrate_(non-linear) SmI
+Single_Nodule_(non-calcified) : SN
+Severe_Infiltrate_(Consolidation) SeI
+
+Thickening_of_interlobar_fissure : T
+
+Unknown : U
