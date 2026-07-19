@@ -28,7 +28,7 @@ def verify_directory(directory, verification_type: int):
             else:
                 try:
                     directory.mkdir(parents=True, exist_ok=True)
-                except PermissionError, Exception:
+                except (PermissionError, Exception):
                     print(f"Could not create {directory.absolute()}.\n"
                           f"Potentially missing permissions to create directory\n"
                           f"Exiting...")
