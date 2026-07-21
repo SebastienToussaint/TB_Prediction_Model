@@ -7,7 +7,8 @@ from pydicom.errors import InvalidDicomError
 from utilities.directory_handling import verify_directory
 
 if len(sys.argv) != 3:
-    print("ERROR: Incorrect arguments provided\nUsage: python dicom_pid_extraction.py <directory_to_search> <savefile>")
+    print("ERROR: Incorrect arguments provided\n"
+          "Usage: make dicom_pid_extraction ARGS='<directory_to_search> <savefile>'")
     quit()
 
 # Get directory from arguments

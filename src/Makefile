@@ -42,6 +42,9 @@ apply_json_annotations: venv ## (Apply annotations to their applicable images. C
 tta_testing: venv ## (Create new images by applying multiple transforms to existing images. Note: Currently only applies transformation to .png images)
 	@$(BIN)/python testing/tta_testing.py $(ARGS)
 
+standardize_images: venv ## (Resize all images in target directory to given dimensions)
+	@$(BIN)/python data_processing/standardize_images.py $(ARGS)
+
 
 
 

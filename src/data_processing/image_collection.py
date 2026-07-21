@@ -7,7 +7,7 @@ from utilities.directory_handling import verify_directory
 
 if len(sys.argv) != 3:
     print("ERROR: Incorrect arguments provided\n"
-          "Usage: python image_collection.py <directory_to_search> <save_directory>")
+          "Usage: make image_collection ARGS='<directory_to_search> <save_directory>'")
     quit()
 
 # Get Path information from command line

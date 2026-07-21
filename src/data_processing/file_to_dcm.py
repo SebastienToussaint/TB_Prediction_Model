@@ -8,7 +8,8 @@ import shutil
 from utilities.directory_handling import verify_directory
 
 if len(sys.argv) != 2:
-    print("ERROR: Incorrect arguments provided\nUsage: python file_to_dcm.py <directory_to_search>")
+    print("ERROR: Incorrect arguments provided\n"
+          "Usage: make file_to_dcm ARGS='<directory_to_search>'")
     quit()
 
 # Get Path information from command line
@@ -20,7 +21,7 @@ verify_directory(directory_path, 0)
 # Get number of files in directory
 num_files_renamed = 0
 
-def find_dicom_dirs(directory):
+def find_dicom_dirs_and_rename(directory):
     """
     Recursively find all subdirectories within the given directory that have the DICOMDIR tag
     """
@@ -33,7 +34,7 @@ def find_dicom_dirs(directory):
             return
 
         if os.path.isdir(new_directory):
-            find_dicom_dirs(new_directory)
+            find_dicom_dirs_and_rename(new_directory)
 
 
 def traverse_directory_and_rename(directory):
@@ -62,6 +63,6 @@ def traverse_directory_and_rename(directory):
         traverse_directory_and_rename(new_directory)
 
 
-find_dicom_dirs(directory_path)
+find_dicom_dirs_and_rename(directory_path)
 
 print(f"Renamed {num_files_renamed} files.\nDone.")

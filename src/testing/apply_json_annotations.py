@@ -26,7 +26,8 @@ class ROI:
 
 # Get paths (all used as Path variable for consistency)
 if len(sys.argv) != 4:
-    print("Error: Incorrect usage\nUsage: python apply_json_annotations.py <images_directory> <annotations_directory> <save_directory>")
+    print("Error: Incorrect usage\n"
+          "Usage: make apply_json_annotations ARGS='<images_directory> <annotations_directory> <save_directory>'")
     quit()
 
 images_directory = Path(sys.argv[1])

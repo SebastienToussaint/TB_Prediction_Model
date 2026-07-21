@@ -118,7 +118,8 @@ def transform_image_contrast():
 
 
 if len(sys.argv) != 3:
-    print("Error: Incorrect usage\nUsage: python tta_testing.py <target_directory> <save_directory>")
+    print("Error: Incorrect usage\n"
+          "Usage: make tta_testing ARGS='<target_directory> <save_directory>'")
     quit()
 
 images_directory = Path(sys.argv[1])
@@ -135,13 +136,12 @@ for file in images_directory.iterdir():
 
 # Apply transforms to images
 for file in images_directory.iterdir():
-    if not file.name.endswith(".png"):
-        continue
-    transform_image_affine(filepath=f"{images_directory}/{file.name}",
-                           savefile_path=f"{save_directory}",
-                           num_files_total=file_count,
-                           x_shift_range=[-250, 250],
-                           y_shift_range=[-100, 100],
-                           rotation_range=[-10, 10])
+    if file.name.endswith(".png"):
+        transform_image_affine(filepath=f"{images_directory}/{file.name}",
+                               savefile_path=f"{save_directory}",
+                               num_files_total=file_count,
+                               x_shift_range=[-250, 250],
+                               y_shift_range=[-100, 100],
+                               rotation_range=[-10, 10])
 
 print(f"\nSuccessfully transformed all images in {images_directory.absolute()}/\nTransformed images have been saved to {save_directory.absolute()}/")
