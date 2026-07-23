@@ -13,14 +13,13 @@ def standardize_image_size(image_path, save_path, target_width, target_height):
     image = cv2.imread(image_path, cv2.IMREAD_UNCHANGED) # TODO: Check if unchanged is correct
 
     if image is None: # Prevents unexpected type warnings
-        print(f"Could not load image {image}")
+        print(f"Could not load image {image_path}")
         return
 
     width, height = image.shape[:2]
 
     # Determine largest rescale factor that keeps aspect ratio
     rescale_factor = min(target_width/width, target_height/height)
-
 
     if 1 > rescale_factor:
         interpolation_strategy = cv2.INTER_AREA # TODO: Check if these are correct

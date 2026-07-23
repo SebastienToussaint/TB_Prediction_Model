@@ -1,28 +1,13 @@
 # Recursively search through given directory and copy all .dcm, .img, .jpeg and .png files found to an output file
+# Can provide a file suffix, in which case only files with that suffix will be collected.
 
 import os
 import sys
 import shutil
 from utilities.directory_handling import verify_directory
 
-if len(sys.argv) != 3:
-    print("ERROR: Incorrect arguments provided\n"
-          "Usage: make image_collection ARGS='<directory_to_search> <save_directory>'")
-    quit()
 
-# Get Path information from command line
-directory_path = sys.argv[1]
-save_directory_path = sys.argv[2]
-
-verify_directory(directory_path, 0)
-verify_directory(save_directory_path, 1)
-
-# Get number of files in directory
-index = len(os.listdir(save_directory_path))
-num_files_copied = 0
-
-
-def traverse_directory_and_copy(directory, save_directory):
+def traverse_directory_and_copy(directory, save_directory, file_suffixes):
     """
     Go down each branch of a directory and copy any .dcm, .img, .jpeg and .png files found to save folder.
     Renames copied file by adding an incrementing index to the beginning of the original file name (Avoids overwriting
@@ -35,8 +20,7 @@ def traverse_directory_and_copy(directory, save_directory):
     for subfile in os.listdir(directory):
         new_directory = directory + "/" + subfile
         if not os.path.isdir(new_directory):
-            if new_directory.endswith(".dcm") or new_directory.endswith(".jpeg") or new_directory.endswith(".png") \
-                or new_directory.endswith(".img"):
+            if len(file_suffixes) == 0 or new_directory.endswith(tuple(file_suffixes)):
                 if "\\" in new_directory:
                     final_slash_index = max(new_directory.rindex("/"), new_directory.rindex("\\"))
                 else:
@@ -51,10 +35,37 @@ def traverse_directory_and_copy(directory, save_directory):
 
             continue
 
-        traverse_directory_and_copy(new_directory, save_directory)
+        traverse_directory_and_copy(new_directory, save_directory, file_suffixes)
 
+if len(sys.argv) < 3:
+    print("ERROR: Incorrect arguments provided\n"
+          "Usage: make image_collection ARGS='<directory_to_search> <save_directory> (optional) {file suffixes}'")
+    quit()
 
-traverse_directory_and_copy(directory_path, save_directory_path)
+# Get Path information from command line
+directory_path = sys.argv[1]
+save_directory_path = sys.argv[2]
+
+verify_directory(directory_path, 0)
+verify_directory(save_directory_path, 1)
+
+# Get acceptable suffixes if appropriate
+collection_suffixes = []
+if len(sys.argv) >= 4:
+    for i in range(3, len(sys.argv)):
+        collection_suffixes.append(sys.argv[i])
+
+if len(collection_suffixes) > 0:
+    if input(f"WARNING: Only files with the following suffixes will be copied to the save directory: {collection_suffixes}\n"
+             f"Go ahead with file copying? (Y/n): ").upper() not in ["Y", "YES"]:
+        print("Cancelling job...")
+        quit()
+
+# Get number of files in directory
+index = len(os.listdir(save_directory_path))
+num_files_copied = 0
+
+traverse_directory_and_copy(directory_path, save_directory_path, collection_suffixes)
 
 # Keep track of directories copied from
 with open(save_directory_path + "/Compilation_history.txt", "a") as file:
