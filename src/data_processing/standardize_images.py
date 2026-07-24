@@ -1,4 +1,6 @@
 from pathlib import Path
+from typing import final
+
 import cv2
 import sys
 from utilities.directory_handling import verify_directory
@@ -16,19 +18,30 @@ def standardize_image_size(image_path, save_path, target_width, target_height):
         print(f"Could not load image {image_path}")
         return
 
-    width, height = image.shape[:2]
+    height, width = image.shape[:2]
 
     # Determine largest rescale factor that keeps aspect ratio
     rescale_factor = min(target_width/width, target_height/height)
+
+    # aspect_ratio_w = width/height # number of width pixels per height pixel
+    # aspect_ratio_h = height/width
+    #
+    # if height < width:
+    #     final_width = int(height*rescale_factor*aspect_ratio_w)
+    #     final_height = int(height*rescale_factor)
+    # else:
+    #     final_height = int(width * rescale_factor * aspect_ratio_h)
+    #     final_width = int(width * rescale_factor)
+
+    final_width = int(width * rescale_factor)
+    final_height = int(height * rescale_factor)
+
 
     if 1 > rescale_factor:
         interpolation_strategy = cv2.INTER_AREA # TODO: Check if these are correct
     else:
         interpolation_strategy = cv2.INTER_LANCZOS4
 
-
-    final_width = int(width * rescale_factor)
-    final_height = int(height * rescale_factor)
 
     image = cv2.resize(image, [final_width, final_height], interpolation=interpolation_strategy)
 

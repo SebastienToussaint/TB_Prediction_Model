@@ -33,7 +33,7 @@ def verify_image_dimensions(image_path, expected_dimensions, bad_dimensions_list
         print(f"Could not load {image_path}")
         return False
 
-    width, height = image.shape[:2]
+    height, width = image.shape[:2]
 
     if width != expected_dimensions[0] or height != expected_dimensions[1]:
         print(width, height, expected_dimensions)
