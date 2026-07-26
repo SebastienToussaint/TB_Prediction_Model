@@ -6,6 +6,22 @@ import sys
 import shutil
 from utilities.directory_handling import verify_directory
 
+def count_num_target_files(directory, file_suffixes, counted_files):
+    """
+    Recursively count number of target files within the target path
+    :param directory: Directory to be searched for images.
+    :return:
+    """
+    global number_of_files
+    for subfile in os.listdir(directory):
+        new_directory = directory + "/" + subfile
+        if not os.path.isdir(new_directory):
+            if len(file_suffixes) == 0 or new_directory.endswith(tuple(file_suffixes)):
+                counted_files += 1
+            continue
+        count_num_target_files(new_directory, file_suffixes, counted_files)
+
+    return counted_files
 
 def traverse_directory_and_copy(directory, save_directory, file_suffixes):
     """
@@ -16,7 +32,7 @@ def traverse_directory_and_copy(directory, save_directory, file_suffixes):
     :param save_directory: Directory where found images should be copied to.
     :return:
     """
-    global index, num_files_copied
+    global index, num_files_copied, number_of_files
     for subfile in os.listdir(directory):
         new_directory = directory + "/" + subfile
         if not os.path.isdir(new_directory):
@@ -26,7 +42,9 @@ def traverse_directory_and_copy(directory, save_directory, file_suffixes):
                 else:
                     final_slash_index = new_directory.rindex("/")
 
-                new_name = str(index) + "_" + new_directory[final_slash_index + 1:]
+                zeros = max(0, len(str(number_of_files)) - len(str(index)) + 1)
+
+                new_name = f"{zeros*'0'}{index}" + "_" + new_directory[final_slash_index + 1:]
 
                 shutil.copy(new_directory, save_directory + "/" + new_name)
                 print(f"Copied file {new_directory} to {save_directory}/{new_name}")
@@ -63,6 +81,7 @@ if len(collection_suffixes) > 0:
 
 # Get number of files in directory
 index = len(os.listdir(save_directory_path))
+number_of_files = count_num_target_files(directory_path, collection_suffixes, 0)
 num_files_copied = 0
 
 traverse_directory_and_copy(directory_path, save_directory_path, collection_suffixes)
