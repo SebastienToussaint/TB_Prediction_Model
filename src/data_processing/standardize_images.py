@@ -5,7 +5,7 @@ import cv2
 import sys
 from utilities.directory_handling import verify_directory
 
-def standardize_image_size(image_path, save_path, target_width, target_height):
+def standardize_image_size(image_path, target_width, target_height):
     """
     Rescale given image while maintaining aspect ratio. Pads border with black pixels.
     Saves rescaled image to given path
@@ -47,23 +47,22 @@ def standardize_image_size(image_path, save_path, target_width, target_height):
                                x_padding + x_padding_filler, x_padding,
                                cv2.BORDER_CONSTANT, value=0)
 
-    cv2.imwrite(save_path, image, (cv2.IMWRITE_PNG_STRATEGY, 0)) # TODO: Check for alternate writing strategies
+    cv2.imwrite(image_path, image, (cv2.IMWRITE_PNG_STRATEGY, 0)) # TODO: Check for alternate writing strategies
 
-if len(sys.argv) != 5:
+if len(sys.argv) != 4:
     print("ERROR: Incorrect arguments provided\n"
           "Usage: make standardize_images ARGS='<images_directory> <save_directory> <target_width> <target_height>'")
     quit()
 
 target_directory = Path(sys.argv[1])
-save_directory = Path(sys.argv[2])
-resize_width = int(sys.argv[3])
-resize_height = int(sys.argv[4])
+resize_width = int(sys.argv[2])
+resize_height = int(sys.argv[3])
 
 verify_directory(target_directory, 0)
-verify_directory(save_directory, 1)
 
 for file in target_directory.iterdir():
     if file.name.endswith(".png"):
         standardize_image_size(f"{target_directory}/{file.name}",
-                               f"{save_directory}/transformed_{file.name}",
                                resize_width, resize_height)
+
+print("Done.")

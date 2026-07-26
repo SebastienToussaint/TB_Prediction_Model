@@ -51,3 +51,5 @@ for file in sorted(directory_path.iterdir()):
 
     print(f"Renaming file {file} to {new_filename}")
     shutil.move(str(directory_path.absolute()) + "/" + file.name, str(directory_path.absolute()) + "/" + new_filename)
+
+print("Done.")

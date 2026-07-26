@@ -33,3 +33,5 @@ with open(sys.argv[2], "a") as savefile:
                     savefile.write(dcmread(directory + "/" + file).PatientID + "\n")
             except InvalidDicomError:
                 print(f"Could not get PID from file {file}. Continuing")
+
+print("Done.")
