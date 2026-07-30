@@ -49,9 +49,11 @@ def standardize_image_size(image_path, target_width, target_height):
 
     cv2.imwrite(image_path, image, (cv2.IMWRITE_PNG_STRATEGY, 0)) # TODO: Check for alternate writing strategies
 
+
+# Argument Management
 if len(sys.argv) != 4:
     print("ERROR: Incorrect arguments provided\n"
-          "Usage: make standardize_images ARGS='<images_directory> <save_directory> <target_width> <target_height>'")
+          "Usage: make standardize_images ARGS='<images_directory> <target_width> <target_height>'")
     quit()
 
 target_directory = Path(sys.argv[1])
@@ -60,6 +62,7 @@ resize_height = int(sys.argv[3])
 
 verify_directory(target_directory, 0)
 
+# Standardize images in target directory
 for file in target_directory.iterdir():
     if file.name.endswith(".png"):
         standardize_image_size(f"{target_directory}/{file.name}",

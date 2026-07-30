@@ -1,13 +1,13 @@
+# Convert metadata of Shenzhen or Montgomery study into standardised CSV file.
+# NOTE: Only works for above mentionsed studies due to file formatting
+
 import sys
 from pathlib import Path
 import csv
 from utilities.directory_handling import verify_directory
 from utilities.string_manipulation import extract_num_from_string, extract_filename_from_path
 
-
-
-
-def write_csv_montgomery(csv_file,  metadata_filepath):
+def write_csv_montgomery(csv_file,  metadata_filepath, study_name):
     """
     Extract metadata from a given metadata file with the montgomery study format and write to given csv file.
     """
@@ -31,17 +31,21 @@ def write_csv_montgomery(csv_file,  metadata_filepath):
             tb_status = "TB"
             additional_information = tb_status_line
 
-    data_line = [corresponding_image_name, patient_sex, patient_age, tb_status, additional_information]
+    data_line = [corresponding_image_name, patient_sex, patient_age, tb_status,
+                 additional_information, corresponding_image_name,  study_name]
 
     data_writer.writerow(data_line)
 
 
-def write_csv_shenzhen(csv_file,  metadata_filepath):
+def write_csv_shenzhen(csv_file,  metadata_filepath, study_name):
+    """
+    Extract metadata from a given metadata file with the shenzhen study format and write to given csv file.
+    """
     data_writer = csv.writer(csv_file)
 
     with open(metadata_filepath, "r") as metadata_file:
         corresponding_image_name = metadata_file.name
-        corresponding_image_name = extract_filename_from_path(corresponding_image_name)
+        corresponding_image_name = extract_filename_from_path(corresponding_image_name, 1)
 
         patient_sex_age_line = metadata_file.readline()
         patient_sex = patient_sex_age_line[0:patient_sex_age_line.index(" ")]
@@ -50,7 +54,6 @@ def write_csv_shenzhen(csv_file,  metadata_filepath):
             patient_sex = "F"
         elif patient_sex.upper() in ["MALE,", "MALE"]:
             patient_sex = "M"
-
 
         patient_age = extract_num_from_string(patient_sex_age_line)
 
@@ -62,10 +65,16 @@ def write_csv_shenzhen(csv_file,  metadata_filepath):
             tb_status = "TB"
             additional_information = tb_status_line
 
-    data_line = [corresponding_image_name, patient_sex, patient_age, tb_status, additional_information]
+    data_line = [corresponding_image_name, patient_sex, patient_age, tb_status,
+                 additional_information, corresponding_image_name, study_name]
 
     data_writer.writerow(data_line)
 
+# Argument Management
+if len(sys.argv) != 4 or sys.argv[3].upper() not in ["SHENZHEN", "SHEN", "MONTGOMERY", "MONT"]:
+    print("ERROR: Incorrect arguments provided\n"
+          "Usage: make metadata_to_csv ARGS='<metadata_directory> <csv_savefile_path> <metadata_structure [Mont, Shen]>")
+    quit()
 
 target_directory = Path(sys.argv[1])
 save_directory = Path(sys.argv[2])
@@ -73,6 +82,7 @@ template = sys.argv[3]
 
 verify_directory(target_directory, 0)
 
+# Verify save directory exists and create parent directories if needed
 if str(save_directory).endswith(".csv"):
     csv_path = save_directory.resolve()
     base_directory = str(save_directory)[0:str(save_directory).index(extract_filename_from_path(str(save_directory), 1))]
@@ -81,13 +91,24 @@ else:
     verify_directory(save_directory, 1)
     csv_path = f"{save_directory.resolve()}/metadata.csv"
 
-with open(csv_path, "a", newline="", encoding="utf-8") as csv_savefile:
+# Setup study parameter
+if template.upper() in ["MONTGOMERY", "MONT"]:
+    study_of_origin = "Montgomery County"
+else:
+    study_of_origin = "Shenzhen Hospital CXR Dataset"
+
+
+with open(csv_path, "w", newline="", encoding="utf-8") as csv_savefile:
+    # Write header
+    w = csv.DictWriter(csv_savefile, ["Associated CXR", "Sex", "Age", "Status", "Notes",
+                                      "Original CXR Name", "Study of Origin"])
+    w.writeheader()
+
     for file in target_directory.iterdir():
         print(f"Writing {file.resolve()}...")
         if template.upper() in ["MONTGOMERY", "MONT"]:
-            write_csv_montgomery(csv_savefile, file.resolve())
+            write_csv_montgomery(csv_savefile, file.resolve(), study_of_origin)
         elif template.upper() in ["SHENZHEN", "SHEN"]:
-            write_csv_shenzhen(csv_savefile, file.resolve())
-
+            write_csv_shenzhen(csv_savefile, file.resolve(), study_of_origin)
 
 print("Done.")

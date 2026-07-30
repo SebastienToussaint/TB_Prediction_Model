@@ -50,16 +50,18 @@ quality_control: venv ## (Recursively check extensions and dimensions of image f
 extract_dcm_image: venv ## (Extract images from DICOM files, convert to PNG and save with PID as filename)
 	@$(BIN)/python data_processing/extract_dcm_image.py $(ARGS)
 
+change_extension: venv ## Change all files with a given extension to another (NOTE: put . in new extension ex: .png)
+    @$(BIN)/python data_processing/change_extension.py $(ARGS)
+
+generate_custom_metadata: venv ## Generate standard metadata file with only image names (for when metadata not available)
+    @$(BIN)/python data_processing/generate_custom_metadata.py $(ARGS)
+
+metadata_to_csv: venv ## Transform Shenzhen or Montgomery dataset metadata into standard csv form
+    @$(BIN)/python data_processing/metadata_to_csv.py $(ARGS)
+
 ## Testing Scripts
 apply_json_annotations: venv ## (Apply annotations to their applicable images. Currently only applies to Shenzhen Dataset file/json structure. Example dataset is given under test_data)
 	@$(BIN)/python testing/apply_json_annotations.py $(ARGS)
 
 tta_testing: venv ## (Create new images by applying multiple transforms to existing images. Note: Currently only applies transformation to .png images)
 	@$(BIN)/python testing/tta_testing.py $(ARGS)
-
-
-
-
-
-
-

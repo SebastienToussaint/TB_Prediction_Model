@@ -6,6 +6,9 @@ from utilities.string_manipulation import extract_filename_from_path
 import csv
 
 def rename_file_no_csv(file, file_index, number_of_files):
+    """
+    Renames files without adjusting an associated metadata file
+    """
     if "." in file.name:
         file_extension = file.name[file.name.rindex("."):]
         new_filename = file.name[:file.name.rindex(".")]
@@ -30,6 +33,9 @@ def rename_file_no_csv(file, file_index, number_of_files):
     shutil.move(str(directory_path.absolute()) + "/" + file.name, str(directory_path.absolute()) + "/" + new_filename)
 
 def rename_file_csv(file, csv_data, file_index, number_of_files):
+    """
+    Renames files while adjusting the given metadata structure (renames old names in metadata to new names)
+    """
     current_file_name = extract_filename_from_path(file.name, 1)
     if "." in file.name:
         file_extension = file.name[file.name.rindex("."):]
@@ -38,8 +44,6 @@ def rename_file_csv(file, csv_data, file_index, number_of_files):
         print(f"No extension found for {file}. Renaming without extension")
         file_extension = ""
         new_filename = file.name
-
-
 
     zeros = max(0, len(str(number_of_files)) - len(str(file_index)) + 1)
 
@@ -53,7 +57,6 @@ def rename_file_csv(file, csv_data, file_index, number_of_files):
 
     file_index += 1
 
-
     print(f"Renaming file {file} to {new_filename}")
     shutil.move(str(directory_path.absolute()) + "/" + file.name, str(directory_path.absolute()) + "/" + new_filename)
 
@@ -62,9 +65,18 @@ def rename_file_csv(file, csv_data, file_index, number_of_files):
         if row[0].endswith(current_file_name):
             row[0] = extract_filename_from_path(new_filename, 1)
 
+
 # Argument structure:
-# Target directory - Prefix to use - Keep labels (0, 1) - Label tag (if keep label 1) - Add label (0, 1) (if keep label 0) -
+# Target directory - Metadata directory- Prefix to use - Keep labels (0, 1) - Label tag (if keep label 1) - Add label (0, 1) (if keep label 0) -
 # Label to add (if keep label 0 and add label 1)
+
+# Argument Management
+if len(sys.argv) != 5:
+    print("ERROR: Incorrect arguments provided\n"
+              "Usage: make standardize_filenames ARGS='<directory_to_search> <metadata_directory (None)> <new_prefix>"
+              " <keep_labels [0,1]> <label_identifier (if keep_labels = 1)> "
+          "(optional) <add_label [0, 1] (if keep_labels = 0)> <label_to_add>'")
+    quit()
 
 directory_path = Path(sys.argv[1])
 verify_directory(directory_path, 0)
@@ -79,9 +91,9 @@ if keep_labels:
 add_labels = 0 # Prevent reference error
 label_to_add = "" # Prevent reference error
 if not keep_labels and len(sys.argv) >= 5:
-    add_labels = int(sys.argv[6])
+    add_labels = int(sys.argv[5])
     if add_labels:
-        label_to_add = sys.argv[7]
+        label_to_add = sys.argv[6]
 
 index = 1
 total_num_files = len(list(directory_path.iterdir()))
@@ -100,10 +112,9 @@ if str(metadata_filepath).endswith(".csv"):
         rename_file_csv(filepath, data, index, total_num_files)
         index += 1
 
-    with open(metadata_filepath, "w", newline="", encoding="utf-8") as csv_file:
-        csv_writer = csv.writer(csv_file)
-        csv_writer.writerows(data)
-
+        with open(metadata_filepath, "w", newline="", encoding="utf-8") as csv_file:
+            csv_writer = csv.writer(csv_file)
+            csv_writer.writerows(data)
 
 else:
     print("Renaming without metadata tracking")

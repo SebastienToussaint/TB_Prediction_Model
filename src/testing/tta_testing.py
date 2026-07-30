@@ -111,7 +111,7 @@ def mirror_image(image: cv2.typing.MatLike):
 def transform_image_aspect_ratio():
     pass
 
-
+# TODO: This function
 def transform_image_contrast():
     # Look at sigmoid based contrast adjustments. Better for x-rays to keep features intact
     pass

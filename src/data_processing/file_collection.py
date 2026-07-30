@@ -5,6 +5,8 @@ import os
 import sys
 import shutil
 from utilities.directory_handling import verify_directory
+from utilities.string_manipulation import extract_filename_from_path
+import csv
 
 def count_num_target_files(directory, file_suffixes, counted_files):
     """
@@ -32,7 +34,7 @@ def traverse_directory_and_copy(directory, save_directory, file_suffixes):
     :param save_directory: Directory where found images should be copied to.
     :return:
     """
-    global index, num_files_copied, number_of_files
+    global index, num_files_copied, number_of_files, metadata, metadata_tracking
     for subfile in os.listdir(directory):
         new_directory = directory + "/" + subfile
         if not os.path.isdir(new_directory):
@@ -48,29 +50,44 @@ def traverse_directory_and_copy(directory, save_directory, file_suffixes):
 
                 shutil.copy(new_directory, save_directory + "/" + new_name)
                 print(f"Copied file {new_directory} to {save_directory}/{new_name}")
+
                 index += 1
                 num_files_copied += 1
+
+                # Update metadata
+                if metadata_tracking:
+                    for row in metadata:
+                        if row[0] == extract_filename_from_path(new_directory, 1):
+                            row[0] = extract_filename_from_path(new_name, 1)
 
             continue
 
         traverse_directory_and_copy(new_directory, save_directory, file_suffixes)
 
+# Argument Management
 if len(sys.argv) < 3:
     print("ERROR: Incorrect arguments provided\n"
-          "Usage: make image_collection ARGS='<directory_to_search> <save_directory> (optional) {file suffixes}'")
+          "Usage: make image_collection ARGS='<directory_to_search> <save_directory> <metadata_file_path [None]> (optional) {file suffixes}'")
     quit()
 
-# Get Path information from command line
 directory_path = sys.argv[1]
 save_directory_path = sys.argv[2]
+
+metadata_file_path = sys.argv[3]
 
 verify_directory(directory_path, 0)
 verify_directory(save_directory_path, 1)
 
+# Setup metadata tracking state
+metadata_tracking = False
+if metadata_file_path.upper() not in ["0", "NONE"]:
+    verify_directory(metadata_file_path, 0)
+    metadata_tracking = True
+
 # Get acceptable suffixes if appropriate
 collection_suffixes = []
-if len(sys.argv) >= 4:
-    for i in range(3, len(sys.argv)):
+if len(sys.argv) >= 5:
+    for i in range(4, len(sys.argv)):
         collection_suffixes.append(sys.argv[i])
 
 if len(collection_suffixes) > 0:
@@ -84,7 +101,29 @@ index = len(os.listdir(save_directory_path))
 number_of_files = count_num_target_files(directory_path, collection_suffixes, 0)
 num_files_copied = 0
 
-traverse_directory_and_copy(directory_path, save_directory_path, collection_suffixes)
+# Recursively move through target directory and all its children.
+# Copy and files with the target extension (if applicable) to the save directory
+# Adds an incrementing index as a prefix to the files in case of duplicate file names
+
+if metadata_tracking:
+    metadata = []
+    print("Moving files while tracking metadata...")
+    # Read metadata
+    with open(metadata_file_path, "r", newline="", encoding="utf-8") as csv_file:
+        csv_reader = csv.reader(csv_file)
+        for line in csv_reader:
+            metadata.append(line)
+
+    traverse_directory_and_copy(directory_path, save_directory_path, collection_suffixes)
+
+    # Write altered metadata back to metadata file
+    with open(metadata_file_path, "w", newline="", encoding="utf-8") as csv_file:
+        csv_writer = csv.writer(csv_file)
+        csv_writer.writerows(metadata)
+
+else:
+    print("Moving files without metadata tracking...")
+    traverse_directory_and_copy(directory_path, save_directory_path, collection_suffixes)
 
 # Keep track of directories copied from
 with open(save_directory_path + "/Compilation_history.txt", "a") as file:

@@ -1,10 +1,12 @@
 # Checks if all files are of correct extension, looks for duplicate images, verifies all images are of same size (if applicable)
 # (look into verifying colour channels/bit depth etc.)
-
+import csv
+import os
 from pathlib import Path
 import sys
 import hashlib
 import cv2
+from utilities.string_manipulation import extract_filename_from_path
 
 
 def generate_image_hash(image_path):
@@ -91,8 +93,61 @@ def find_duplicates(dictionary):
 
     if duplicates_found:
         print("Done.")
+        if input("Would you like to remove the found duplicates and keep only one copy? (Y/n): ").upper() not in ["Y", "YES"]:
+            print("Not removing duplicates.\nContinuing...")
+        else:
+            remove_duplicates(dictionary)
     else:
         print("No duplicates found!\n")
+
+def remove_duplicates(dictionary):
+    """
+    Remove all image duplicates from a directory, leaving only one of the group
+    Also removes record of the removed duplicate from the metadata file if it can find the file
+    Attempts to find the metadata file by going back twice in the directory path and finding the csv file (file structure used in this project)
+    If it cannot find the metadata file, it removes the duplicate without modifying the metadata
+    """
+    print("\n\nRemoving duplicates...\n")
+    for key in dictionary:
+        while len(dictionary[key]) > 1:
+            directory_path = dictionary[key][-1]
+            print(f"Removing {directory_path}")
+
+            # Try to find metadata csv file 2 directories back
+            try:
+                directory_root = str(directory_path)
+                for i in range(2):
+                    print(directory_root)
+                    directory_root = directory_root[:directory_root.rindex("/")]
+
+                print(f"Attempting to find metadata file at root {directory_root}")
+
+                for file in os.listdir(directory_root):
+                    if str(file).endswith(".csv"):
+                        print("Found metadata file in root")
+                        image_name = extract_filename_from_path(directory_path, 1)
+
+                        # Read metadata in
+                        with open(f"{directory_root}/{file}", "r", newline="", encoding="utf-8") as csv_file:
+                            metadata_file = csv.reader(csv_file)
+                            metadata = []
+                            for line in metadata_file:
+                                metadata.append(line)
+                        # Remove record from metadata
+                        for row in metadata:
+                            if row[0] == image_name:
+                                metadata.remove(row)
+                                print("removed row", image_name)
+                        # Write metadata back
+                        with open(f"{directory_root}/{file}", "w", newline="", encoding="utf-8") as csv_file:
+                            csv_writer = csv.writer(csv_file)
+                            csv_writer.writerows(metadata)
+            except Exception as e:
+                print(e)
+                print("Could not remove file from metadata")
+
+            os.remove(dictionary[key][-1])
+            dictionary[key].pop(-1)
 
 # Argument management
 if len(sys.argv) == 3:
@@ -115,10 +170,11 @@ image_hashes = {}
 incorrect_extension_files = []
 incorrect_dimension_files = []
 
-# Verify target directory
+# Perform quality control on target directory
 traverse_directory(target_directory, image_hashes, expected_file_extension,
                    (expected_image_width, expected_image_height),
                    incorrect_extension_files, incorrect_dimension_files)
+
 find_duplicates(image_hashes)
 
 # Display non-standard files
@@ -129,6 +185,7 @@ if len(incorrect_extension_files) != 0:
 else:
     print(f"All files have correct extension ({expected_file_extension})")
 
+# Display filepaths of images with incorrect image sizes TODO: Give option to resize incorrect images?
 if expected_image_width > 0:
     if len(incorrect_dimension_files) != 0:
         print(f"\nImages with incorrect dimensions ({expected_image_width}x{expected_image_height} expected):")
