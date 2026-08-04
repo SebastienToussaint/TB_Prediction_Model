@@ -3,3 +3,5 @@ opencv-python~=5.0.0.93
 numpy~=2.5.1
 pillow~=12.3.0
 pydicom~=3.0.2
+PyQt5~=5.15.10
+matplotlib
