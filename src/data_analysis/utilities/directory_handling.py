@@ -35,3 +35,22 @@ def verify_directory(directory, verification_type: int):
                     quit()
 
                 print("Successfully created directory.\nContinuing with job...")
+
+def get_csv_file_paths(target_directory: Path):
+    """
+    Recursively searches target directory for csv file returns paths of all csv files found
+    """
+    csv_paths = []
+
+    def traverse_and_find_csv(directory: Path,csv_directories: list):
+        for path in directory.iterdir():
+            if str(path).endswith(".csv"):
+                print(f"Found csv at {path.resolve()}")
+                csv_directories.append(Path(path.resolve()))
+            elif path.is_dir():
+                traverse_and_find_csv(path.resolve(), csv_directories)
+
+    traverse_and_find_csv(target_directory, csv_paths)
+
+    return csv_paths
+
