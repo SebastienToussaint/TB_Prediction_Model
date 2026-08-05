@@ -1,6 +1,5 @@
 import numpy as np
 from utilities.string_manipulation import get_column_index_for_label
-import csv
 import matplotlib.pyplot as plt
 
 def get_age_with_status_counts(data_array:list, age_groups: list):
@@ -96,17 +95,3 @@ def display_age_with_status_counts(age_groups, counts: list, count_labels:list, 
     plt.xlabel("Age groups (years)")
     plt.ylabel("Proportion of individuals")
     plt.show()
-
-
-if __name__ == "__main__":
-    metadata = []
-    with open("./../../../ProcessedData/Montgomery/montgomery_metadata.csv", "r") as meta_file:
-        csv_reader = csv.reader(meta_file)
-        for line in csv_reader:
-            metadata.append(line)
-
-    groups, counts_healthy, counts_sick, counts_tb = get_age_with_status_counts(metadata, [0, 18, 25, 35, 45, 55, 65, 80])
-    display_age_with_status_counts(groups,
-                                   [counts_healthy, counts_sick, counts_tb],
-                                   ["Healthy", "Sick (non-TB)", "TB"],
-                                   ["b","r"])
