@@ -4,15 +4,11 @@ from utilities.directory_handling import get_csv_file_paths
 from pathlib import Path
 import csv
 
-import argparse
-
 # Chart imports
 import age_distribution
 import age_with_status_distribution
 import health_distribution
 import sex_distribution
-
-
 
 # Argument management and csv path retrieval
 csv_paths = []
@@ -108,5 +104,4 @@ if len(charts_to_create) > 0:
     print("Could not create charts of following types (<make create_chart ARGS='list'> to see list of options):")
     for chart in charts_to_create:
         print(chart)
-
 
