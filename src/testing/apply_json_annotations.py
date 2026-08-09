@@ -61,7 +61,7 @@ for image_name in tb_positive_image_names:
 # Apply annotations to images and save
 for image_name in json_file_paths:
     print("Processing image " + image_name + "...")
-    img = Image.open("test_data/images/" + image_name)
+    img = Image.open(str(images_directory.resolve()) + "/" + image_name)
 
     # Extract ROIs for an image
     shapes = []
