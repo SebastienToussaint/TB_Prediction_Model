@@ -24,7 +24,7 @@ def calculate_roc_values(inferred_probabilities: list, truth_labels: list):
 
         roc_coords.append([fpr, tpr])
 
-        cutoff_value += 0.0001
+        cutoff_value += 0.01
 
         if not reached_one:
             cutoff_value = min(cutoff_value, 1)

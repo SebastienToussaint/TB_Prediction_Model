@@ -7,7 +7,7 @@ def calculate_pr_values(inferred_probabilities: list, truth_labels: list):
 
     cutoff_value = 0.01
 
-    roc_coords = []
+    pr_coords = []
     reached_one = False
 
     while cutoff_value <= 1:
@@ -22,15 +22,15 @@ def calculate_pr_values(inferred_probabilities: list, truth_labels: list):
         recall = calculate_recall(inferred_labels, truth_labels)
         precision = calculate_precision(inferred_labels, truth_labels)
 
-        roc_coords.append([recall, precision])
+        pr_coords.append([recall, precision])
 
-        cutoff_value += 0.0001
+        cutoff_value += 0.01
 
         if not reached_one:
             cutoff_value = min(cutoff_value, 1)
             reached_one = True
 
-    return roc_coords
+    return pr_coords
 
 
 def draw_pr_curve(coordinates: list):
