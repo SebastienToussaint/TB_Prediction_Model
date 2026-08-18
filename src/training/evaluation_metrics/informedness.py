@@ -1,4 +1,4 @@
-from core_metrics import calculate_true_positive_rate, calculate_true_negative_rate
+from .core_metrics import calculate_true_positive_rate, calculate_true_negative_rate
 
 def calculate_informedness(inferred_labels: list, truth_labels: list):
     """

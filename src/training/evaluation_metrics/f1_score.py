@@ -1,4 +1,4 @@
-from metric_counts import get_true_positives, get_false_positives, get_false_negatives
+from .metric_counts import get_true_positives, get_false_positives, get_false_negatives
 
 def calculate_f1_score(inferred_labels: list, truth_labels: list):
     """

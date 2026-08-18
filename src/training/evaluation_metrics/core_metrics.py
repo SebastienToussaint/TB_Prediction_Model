@@ -1,4 +1,4 @@
-from metric_counts import get_true_positives, get_false_negatives, get_true_negatives, get_false_positives
+from .metric_counts import get_true_positives, get_false_negatives, get_true_negatives, get_false_positives
 
 def calculate_true_positive_rate(inferred_labels: list, truth_labels: list):
     """

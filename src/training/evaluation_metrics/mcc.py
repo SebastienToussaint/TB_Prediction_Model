@@ -1,5 +1,5 @@
 from math import sqrt
-from core_metrics import *
+from .core_metrics import *
 
 def calculate_matthews_correlation_coefficient(inferred_labels: list, truth_labels: list):
     """

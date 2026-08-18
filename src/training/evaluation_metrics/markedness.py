@@ -1,4 +1,4 @@
-from core_metrics import calculate_positive_predictive_value, calculate_negative_predictive_value
+from .core_metrics import calculate_positive_predictive_value, calculate_negative_predictive_value
 
 def calculate_markedness(inferred_labels: list, truth_labels: list):
     """

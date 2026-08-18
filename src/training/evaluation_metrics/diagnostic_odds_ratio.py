@@ -1,4 +1,4 @@
-from likelihood_ratios import calculate_positive_likelihood_ratio, calculate_negative_likelihood_ratio
+from .likelihood_ratios import calculate_positive_likelihood_ratio, calculate_negative_likelihood_ratio
 
 def calculate_diagnostic_odds_ratio(inferred_labels: list, truth_labels: list):
     """

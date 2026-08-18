@@ -1,5 +1,5 @@
 import numpy as np
-from core_metrics import calculate_recall, calculate_precision
+from .core_metrics import calculate_recall, calculate_precision
 from matplotlib import pyplot as plt
 
 

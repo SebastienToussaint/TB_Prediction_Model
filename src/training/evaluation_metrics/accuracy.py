@@ -1,5 +1,5 @@
-from metric_counts import get_true_positives, get_true_negatives
-from core_metrics import calculate_true_positive_rate, calculate_true_negative_rate
+from .metric_counts import get_true_positives, get_true_negatives
+from .core_metrics import calculate_true_positive_rate, calculate_true_negative_rate
 
 def calculate_accuracy(inferred_labels: list, truth_labels: list):
     """
@@ -8,10 +8,10 @@ def calculate_accuracy(inferred_labels: list, truth_labels: list):
     :param truth_labels: Ground truth labels. Indices must match inferred_labels
     """
 
-    tp = get_true_positives(inferred_labels, truth_labels)
-    tn = get_true_negatives(inferred_labels, truth_labels)
+    tp = get_true_positives(inferred_labels, truth_labels)[0]
+    tn = get_true_negatives(inferred_labels, truth_labels)[0]
 
-    return (tp+tn)/len(inferred_labels)
+    return (tp+tn)/(len(inferred_labels))
 
 
 def calculate_balanced_accuracy(inferred_labels: list, truth_labels: list):
@@ -25,4 +25,3 @@ def calculate_balanced_accuracy(inferred_labels: list, truth_labels: list):
     tnr = calculate_true_negative_rate(inferred_labels, truth_labels)
 
     return (tpr+tnr)/2
-

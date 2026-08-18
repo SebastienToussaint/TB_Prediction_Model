@@ -69,3 +69,6 @@ apply_json_annotations: venv ## (Apply annotations to their applicable images. C
 
 tta_testing: venv ## (Create new images by applying multiple transforms to existing images. Note: Currently only applies transformation to .png images)
 	@$(BIN)/python testing/tta_testing.py $(ARGS)
+
+testy: venv ## Test
+	@$(BIN)/python training/dataloader_tests.py $(ARGS)

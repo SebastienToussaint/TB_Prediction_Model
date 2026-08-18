@@ -1,5 +1,5 @@
 import numpy as np
-from core_metrics import calculate_true_positive_rate, calculate_false_positive_rate
+from .core_metrics import calculate_true_positive_rate, calculate_false_positive_rate
 from matplotlib import pyplot as plt
 
 
@@ -33,9 +33,10 @@ def calculate_roc_values(inferred_probabilities: list, truth_labels: list):
     return roc_coords
 
 
-def draw_roc_curve(coordinates: list):
+def draw_roc_curve(inferred_probabilities: list, truth_labels: list):
     x = []
     y = []
+    coordinates = calculate_roc_values(inferred_probabilities, truth_labels)
 
     for coord in coordinates: #TODO: do this with array slicing
         x.append(coord[0])
