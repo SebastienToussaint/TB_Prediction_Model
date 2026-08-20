@@ -2,6 +2,7 @@ import torch
 import matplotlib.pyplot as plt
 import pickle
 from utilities.directory_handling import verify_directory
+from training import data_handling
 
 class Trainer:
     def __init__(self):
@@ -35,14 +36,17 @@ class Trainer:
         print(f"Trainer was successfully saved to {str(savefile_directory)}/{savefile_name}")
 
     @staticmethod
-    def manual_observation(model, dataloaders):
+    def manual_observation(model, data_structure: data_handling.DataStructure):
         """
         Take given model and infer on a sample, showing the image, the correct label and the inferred label for
         manual checking
         :return:
         """
 
-        for dataloader in dataloaders:
+        if not data_structure.dataloaders:
+            data_structure.load_dataset(True)
+
+        for dataloader in data_structure.dataloaders:
             for batch in dataloader:
                 batch_images = batch[0]
                 batch_labels = batch[1]

@@ -1,9 +1,9 @@
 from pathlib import Path
 
 def verify_directory(directory, verification_type: int):
-    if verification_type not in [0, 1]:
+    if verification_type not in [0, 1, 2]:
         print(f"Error in verify_directory(): {verification_type} is not an option.\n"
-              f"Options: 0, 1")
+              f"Options: 0, 1, 2")
         quit()
 
     if not isinstance(directory, Path):
@@ -21,7 +21,7 @@ def verify_directory(directory, verification_type: int):
     else:
         # Create save directory if it doesn't already exist
         if not directory.exists():
-            if input(f"Could not find {directory.resolve()}\n"
+            if verification_type == 2 or input(f"Could not find {directory.resolve()}\n"
                      f"Create a directory at this location? (Y/n): ").upper() not in ("Y", "YES"):
                 print("Not creating directory\nExiting...")
                 quit()

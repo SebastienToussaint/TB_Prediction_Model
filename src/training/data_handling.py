@@ -1,6 +1,8 @@
+import os.path
 import random
 from pathlib import Path
 import numpy as np
+import torch
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import ToTensor
 from utilities.directory_handling import verify_directory
@@ -36,10 +38,9 @@ def encode_image(image_path):
               f"Exiting...")
         quit()
 
-    return pixel_array
+    pixel_array = torch.from_numpy(pixel_array).float()
 
-def get_image_label_from_csv():
-    pass
+    return pixel_array
 
 def get_image_label_from_name(image_name: str):
     last_underscore_index = image_name.rindex("_")
@@ -56,6 +57,9 @@ class DataStructure:
         """
         Only to be used within object
         """
+
+        print("Partitioning data...")
+
         datapoints_per_partition = int(ceil(len(raw_data) / partitions))
         partitioned_data = []
 
@@ -92,7 +96,9 @@ class DataStructure:
         :param save_directory: Directory .pkl file should be saved to
         :param savefile_name: Name of save file
         """
-        verify_directory(save_directory, 1)
+
+        print("Creating compressed dataset...")
+        verify_directory(save_directory, 2)
 
         raw_data = []
         for directory in images_directories:
@@ -101,7 +107,7 @@ class DataStructure:
                 image_array = encode_image(image)
                 image_label = get_image_label_from_name(str(image))
 
-                raw_data.append((image_array, image_label))
+                raw_data.append((image_array, torch.tensor(int(image_label))))
 
         partitioned_data = self._transform_raw_data_to_dataloaders(raw_data, partitions, batch_size)
 
@@ -115,6 +121,8 @@ class DataStructure:
 
         with open(str(save_directory) + "/" + savefile_name, "wb") as savefile:
             pickle.dump(partitioned_data, savefile)
+
+        print(f"Compressed datafile saved at {str(save_directory) + "/" + savefile_name}")
 
         partitioned_data.clear()
 
@@ -149,6 +157,7 @@ class DataStructure:
         else:
             print(f"Loading custom data at {pickled_data_path}...")
 
+        print(pickled_data_path)
         with open(pickled_data_path, "rb") as datafile:
             data_loaders = pickle.load(datafile)
 
@@ -172,29 +181,17 @@ class DataStructure:
         batch_size = 1
 
         # Lump data together
-        for dl in self.dataloaders:
+        while len(self.dataloaders) > 0:
+            dl = self.dataloaders.pop(0)
             for i, (batch_images, batch_labels) in enumerate(dl):
 
-                batch_images_copy = batch_images.tolist().copy()
-                batch_labels_copy = list(batch_labels).copy()
-
-
-                for b in dl:
-                    print(len(b))
-
-
-
-
-                batch_images = batch_images_copy
-                batch_labels = batch_labels_copy
-
-
-                # print(batch_labels)
                 if len(batch_images) > batch_size:
                     batch_size = len(batch_images)
 
-                while len(batch_images) > 0:
-                    raw_data.append((batch_images.pop(0), batch_labels.pop(0)))
+                for image, label in zip(batch_images, batch_labels):
+                    raw_data.append((image, label))
+
+            del dl
 
         # Reload randomly into dataloaders
         partitioned_data = self._transform_raw_data_to_dataloaders(raw_data, num_partitions, batch_size)
@@ -203,9 +200,20 @@ class DataStructure:
         return partitioned_data
 
 
+    def delete_data(self, delete_native=False, filepath=""):
+        if not delete_native and not filepath:
+            print("Error in delete_data(). Need to select delete_native as true or provide filepath to file for deleting.")
+            quit()
+        if not str(filepath).endswith(".pkl"):
+            print("File at path to delete must be a .pkl file")
 
-    def save_data(self):
-        pass
+        if os.path.exists(filepath):
+            os.remove(filepath)
+            print(f"{filepath} removed successfully.")
+
+        else:
+            print(f"Could not find {filepath}")
+
 
     def set_native_datapath(self, datapath: Path | str):
         datapath = Path(str(datapath)).resolve()
@@ -219,30 +227,12 @@ class DataStructure:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    def fashion_mnist_to_images(self, fashionMNIST_data_path, save_directory):
+    def fashion_mnist_to_images(self, fashionMNIST_data_path, upscale_factor,save_directory):
         """
         Creates a png image dataset of shoes and shirts from the fashionmnist dataset.
         Saves images to the save directory and adds labels to the end of the filenames.
         :param fashionMNIST_data_path:
+        :param upscale_factor:
         :param save_directory:
         :return:
         """
@@ -252,6 +242,7 @@ class DataStructure:
         for (images, labels) in data:
             for i, image in enumerate(images):
                 save_name = f"{save_directory}/{idx}_fashion_{labels[i]}.png"
+                image = torch.tensor(cv2.resize(np.array(image), (300, 300), interpolation=cv2.INTER_CUBIC))
                 cv2.imwrite(save_name, (image.squeeze().numpy() * 65535).astype(np.uint16), [cv2.IMWRITE_PNG_COMPRESSION, 0])
                 idx += 1
 
@@ -285,48 +276,20 @@ True)
             elif item[1] == 9:
                 filtered_data.append((item[0], 1))
 
-        print("Partitioning data...")
-
-        datapoints_per_partition = int(ceil(len(filtered_data)/partitions))
-        partitioned_data = []
-        for i in range(partitions): # = [[]]*partitions causes bug because all [] have same mem address
-            partitioned_data.append([])
-
-        non_full_partitions = [n for n in range(partitions)]
-
-        while len(filtered_data) > 0:
-            # Randomly assign each datapoint to a partition
-            random_index = random.randint(0, len(non_full_partitions)-1)
-            assigned_partition = non_full_partitions[random_index]
-
-            partitioned_data[assigned_partition].append(filtered_data.pop(0)) # Save memory by popping instead of copying
-
-            if len(partitioned_data[assigned_partition]) == datapoints_per_partition:
-                non_full_partitions.pop(random_index)
-
-
-        for i in range(len(partitioned_data)):
-            partitioned_data[i] = CustomDataset(partitioned_data[i])
-
-        for i in range(len(partitioned_data)):
-            partitioned_data[i] = DataLoader(partitioned_data[i], batch_size, True)
-
+        partitioned_data = self._transform_raw_data_to_dataloaders(filtered_data, partitions, batch_size)
         self.dataloaders = partitioned_data
         return partitioned_data
 
 
 
-d = DataStructure()
-# d.create_compressed_dataset(["test_data/fashion_images/"], 10, 32, "test_data/pickled_data/", "fashion")
-d.set_native_datapath("test_data/pickled_data/fashion.pkl")
-d.load_dataset(True)
-d.shuffle_data()
+
+if __name__ == "__main__":
+    d = DataStructure()
 
 
+    d.create_compressed_dataset(["test_data/fashion_images/"], 10, 32, "test_data/pickled_data/", "fashion_upscaled_123")
+    # d.set_native_datapath("test_data/pickled_data/fashion.pkl")
+    # d.load_dataset(True)
+    # d.shuffle_data()
 
-# for dataloader in data:
-#     for (batch_images, batch_labels)  in dataloader:
-#         for j, img in enumerate(batch_images):
-#             print(img)
-#             cv2.imshow(batch_labels[j], img.numpy())
-#             cv2.waitKey(0)
+    pass

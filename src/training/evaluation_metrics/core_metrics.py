@@ -10,7 +10,12 @@ def calculate_true_positive_rate(inferred_labels: list, truth_labels: list):
     true_positives = get_true_positives(inferred_labels, truth_labels)[0]
     false_negatives = get_false_negatives(inferred_labels, truth_labels)[0]
 
-    return true_positives/(true_positives+false_negatives)
+
+
+
+    if true_positives+false_negatives == 0:
+        return 0
+    return true_positives/(true_positives+false_negatives) #TODO add div by 0 checks everywhere
 
 
 def calculate_recall(inferred_labels: list, truth_labels: list): # For ease of use
@@ -36,6 +41,9 @@ def calculate_true_negative_rate(inferred_labels: list, truth_labels: list):
 
     true_negatives = get_true_negatives(inferred_labels, truth_labels)[0]
     false_positives = get_false_positives(inferred_labels, truth_labels)[0]
+
+    if true_negatives+false_positives == 0:
+        return 0
 
     return true_negatives/(true_negatives+false_positives)
 
@@ -64,6 +72,9 @@ def calculate_positive_predictive_value(inferred_labels: list, truth_labels: lis
     true_positives = get_true_positives(inferred_labels, truth_labels)[0]
     false_positives = get_false_positives(inferred_labels, truth_labels)[0]
 
+    if true_positives+false_positives == 0:
+        return 0
+
     return true_positives/(true_positives+false_positives)
 
 
@@ -80,6 +91,9 @@ def calculate_negative_predictive_value(inferred_labels: list, truth_labels: lis
 
     true_negatives = get_true_negatives(inferred_labels, truth_labels)[0]
     false_negatives = get_false_negatives(inferred_labels, truth_labels)[0]
+
+    if true_negatives+false_negatives == 0:
+        return 0
 
     return true_negatives/(true_negatives+false_negatives)
 

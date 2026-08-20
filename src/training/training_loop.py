@@ -2,9 +2,11 @@ import torch
 from torch import nn
 
 from training import data_handling
+from training.data_handling import CustomDataset
 import trainer
 from evaluation_metrics import *
 from training.evaluation_metrics import accuracy
+from model import CNN
 
 
 def run_training_loop(model: nn.Module, data_structure: data_handling.DataStructure, number_of_epochs: int, loss_fn, optimizer, target_device: str = "cpu",
@@ -12,10 +14,10 @@ def run_training_loop(model: nn.Module, data_structure: data_handling.DataStruct
 
     model.to(target_device)
 
-    data_structure.load_test_data(2, 32, "/home/sebastien/Project/TB_Prediction_Model/src/training/test_data/fashionM")
 
     train_dataloader = data_structure.dataloaders[0]
     test_dataloader = data_structure.dataloaders[1]
+
 
     for epoch in range(number_of_epochs):
         print(f"Epoch {epoch}/{number_of_epochs}")
@@ -97,12 +99,18 @@ class TestModel(nn.Module):
     def forward(self, x):
         return self.layers(x)
 
-model_0 = TestModel(784,64, 1)
+# model_0 = TestModel(10000,2000, 1)
+model_0 = CNN()
+model_0.create_standard(784, 64, 1)
 ds = data_handling.DataStructure()
 
 optimizer = torch.optim.SGD(params=model_0.parameters(), lr=0.001)
 loss_function = nn.BCEWithLogitsLoss()
 
+ds.set_native_datapath("test_data/pickled_data/fashion.pkl")
+ds.load_dataset(True)
 run_training_loop(model_0, ds, 10, loss_function, optimizer)
 
-trainer.Trainer.manual_observation(model_0, ds.load_test_data(1, 10, "/home/sebastien/Project/TB_Prediction_Model/src/training/test_data/fashionM"))
+ds.shuffle_data()
+
+trainer.Trainer.manual_observation(model_0, ds)
