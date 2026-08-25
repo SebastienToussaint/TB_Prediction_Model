@@ -22,9 +22,21 @@ venv: ## (Create virtual environment if it doesn't exist)
 
 install: venv ## (Installs dependencies and initiate virtual environment)
 	$(BIN)/pip install -r requirements.txt
+	$(BIN)/pip install -r requirements-pytorch.txt
+
+fresh_install: venv
+	$(BIN)/pip uninstall -y -r requirements.txt
+	$(BIN)/pip uninstall -y -r requirements-pytorch.txt
+	$(BIN)/pip install -r requirements.txt
+	$(BIN)/pip install -r requirements-pytorch.txt
+
 
 clean: ## (Clean project. Removes all dependencies and virtual environment)
 	$(CLEAN)
+
+clean_win:
+	$(BIN)/pip uninstall -y -r requirements.txt
+	$(BIN)/pip uninstall -y -r requirements-pytorch.txt
 
 ## TB model scripts:
 

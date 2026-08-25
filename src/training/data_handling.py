@@ -3,6 +3,7 @@ import random
 from pathlib import Path
 import numpy as np
 import torch
+from matplotlib.pyplot import imshow
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import ToTensor
 from utilities.directory_handling import verify_directory
@@ -104,6 +105,7 @@ class DataStructure:
         for directory in images_directories:
             directory = Path(str(directory))
             for image in directory.iterdir():
+                print(f"Encoding {image}")
                 image_array = encode_image(image)
                 image_label = get_image_label_from_name(str(image))
 
@@ -157,7 +159,6 @@ class DataStructure:
         else:
             print(f"Loading custom data at {pickled_data_path}...")
 
-        print(pickled_data_path)
         with open(pickled_data_path, "rb") as datafile:
             data_loaders = pickle.load(datafile)
 
@@ -227,23 +228,43 @@ class DataStructure:
 
 
 
-    def fashion_mnist_to_images(self, fashionMNIST_data_path, upscale_factor,save_directory):
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def fashion_mnist_to_images(self, fashionMNIST_data_path, save_directory, resize_scale: list = None,):
         """
         Creates a png image dataset of shoes and shirts from the fashionmnist dataset.
         Saves images to the save directory and adds labels to the end of the filenames.
         :param fashionMNIST_data_path:
-        :param upscale_factor:
+        :param resize_scale:
         :param save_directory:
         :return:
         """
         print("Creating and saving images")
+        verify_directory(save_directory, 1)
         idx = 0
         data = self.load_test_data(1, 100, fashionMNIST_data_path)[0]
         for (images, labels) in data:
             for i, image in enumerate(images):
                 save_name = f"{save_directory}/{idx}_fashion_{labels[i]}.png"
-                image = torch.tensor(cv2.resize(np.array(image), (300, 300), interpolation=cv2.INTER_CUBIC))
-                cv2.imwrite(save_name, (image.squeeze().numpy() * 65535).astype(np.uint16), [cv2.IMWRITE_PNG_COMPRESSION, 0])
+
+                # Convert image to array, resize and change dtype
+                image = np.asarray(image).squeeze()
+                image = (image * 65535).round().astype(np.uint16)
+                if resize_scale:
+                    image = cv2.resize(image, (resize_scale[0], resize_scale[1]), interpolation=cv2.INTER_CUBIC)
+
+                cv2.imwrite(save_name, image)
                 idx += 1
 
 
@@ -285,9 +306,9 @@ True)
 
 if __name__ == "__main__":
     d = DataStructure()
+    d.fashion_mnist_to_images(Path("test_data/fashionMNIST"), "test_data/fashion_images")
 
-
-    d.create_compressed_dataset(["test_data/fashion_images/"], 10, 32, "test_data/pickled_data/", "fashion_upscaled_123")
+    d.create_compressed_dataset(["test_data/fashion_images/"], 100, 8, "test_data/pickled_data/", "fashion_light_split_100")
     # d.set_native_datapath("test_data/pickled_data/fashion.pkl")
     # d.load_dataset(True)
     # d.shuffle_data()

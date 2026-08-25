@@ -21,7 +21,18 @@ def verify_directory(directory, verification_type: int):
     else:
         # Create save directory if it doesn't already exist
         if not directory.exists():
-            if verification_type == 2 or input(f"Could not find {directory.resolve()}\n"
+            if verification_type == 2:
+                try:
+                    directory.mkdir(parents=True, exist_ok=True)
+                except (PermissionError, Exception):
+                    print(f"Could not create {directory.absolute()}.\n"
+                          f"Potentially missing permissions to create directory\n"
+                          f"Exiting...")
+                    quit()
+
+                print("Successfully created directory.\nContinuing with job...")
+
+            elif input(f"Could not find {directory.resolve()}\n"
                      f"Create a directory at this location? (Y/n): ").upper() not in ("Y", "YES"):
                 print("Not creating directory\nExiting...")
                 quit()

@@ -7,14 +7,8 @@ from pathlib import Path
 class CNN(nn.Module):
     def __init__(self):
         super().__init__()
-
+        self.model_type = "cnn"
         self.layers = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(1, 1),
-            nn.ReLU(),
-            nn.Linear(1, 1),
-            nn.ReLU(),
-            nn.Linear(1, 1)
         )
         self.evaluations = {}
 
@@ -55,25 +49,24 @@ class CNN(nn.Module):
         for layer in self.layers:
             print(layer)
 
-    def create_standard(self, input_shape, hidden_units, output_shape):
+    def create_standard(self, colour_channels, hidden_units, output_shape):
         """
         Creates a standard CNN structure
-        :return:
         """
         self.layers = nn.Sequential(
-            nn.Conv2d(input_shape, hidden_units,3,1, 1),
+            nn.Conv2d(colour_channels, hidden_units,3,1, 1),
             nn.ReLU(),
             nn.Conv2d(hidden_units, hidden_units,3,1, 1),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2,
-                         stride=2),
+            nn.MaxPool2d(2),
             nn.Conv2d(hidden_units, hidden_units, 3, padding=1),
             nn.ReLU(),
             nn.Conv2d(hidden_units, hidden_units, 3, padding=1),
             nn.ReLU(),
             nn.MaxPool2d(2),
+            nn.AdaptiveAvgPool2d((1, 1)),
             nn.Flatten(),
-            nn.Linear(hidden_units*7*7, output_shape)
+            nn.Linear(hidden_units, output_shape)
         )
 
 

@@ -51,7 +51,7 @@ class Trainer:
                 batch_images = batch[0]
                 batch_labels = batch[1]
 
-
+                batch_images = batch_images.unsqueeze(1)
                 predicted_labels = torch.round(torch.sigmoid(model(batch_images)))
 
 
@@ -59,9 +59,7 @@ class Trainer:
 
                     img = batch_images[i].squeeze()
                     label = batch_labels[i]
-
-                    print(f"Prediction: {predicted_labels[i]}")
-                    print(f"Truth: {label}")
                     plt.imshow(img, cmap="gray")
+                    plt.title(f"Predicted: {predicted_labels[i].item()} Real: {label}")
                     plt.show()
 
