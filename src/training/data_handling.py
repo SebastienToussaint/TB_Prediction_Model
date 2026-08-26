@@ -219,26 +219,9 @@ class DataStructure:
     def set_native_datapath(self, datapath: Path | str):
         datapath = Path(str(datapath)).resolve()
 
-        verify_directory(datapath, 1)
+        verify_directory(datapath, 0)
 
         self.native_data_path = datapath
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     def fashion_mnist_to_images(self, fashionMNIST_data_path, save_directory, resize_scale: list = None,):
@@ -282,7 +265,7 @@ class DataStructure:
         # Get data
         print("Retrieving FashionMNIST data...")
 
-        verify_directory(fashionMNIST_data_path, 1)
+        verify_directory(fashionMNIST_data_path, 0)
 
         train_data = datasets.FashionMNIST(fashionMNIST_data_path,True, ToTensor(), None,
 True)
@@ -306,9 +289,9 @@ True)
 
 if __name__ == "__main__":
     d = DataStructure()
-    d.fashion_mnist_to_images(Path("test_data/fashionMNIST"), "test_data/fashion_images")
+    # d.fashion_mnist_to_images(Path("test_data/fashionM"), "test_data/fashion_images")
 
-    d.create_compressed_dataset(["test_data/fashion_images/"], 100, 8, "test_data/pickled_data/", "fashion_light_split_100")
+    d.create_compressed_dataset(["test_data/fashion_images/"], 10, 32, "test_data/pickled_data/", "fashion_original_small")
     # d.set_native_datapath("test_data/pickled_data/fashion.pkl")
     # d.load_dataset(True)
     # d.shuffle_data()
