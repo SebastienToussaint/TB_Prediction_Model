@@ -1,4 +1,4 @@
-from pympler.asizeof import asizeof, asized
+# from pympler.asizeof import asizeof, asized
 import torch
 from torch import nn
 from training import data_handling

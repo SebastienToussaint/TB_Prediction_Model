@@ -154,9 +154,9 @@ class Trainer:
 model_0 = models.CNN()
 model_0.create_standard(1, 128, 1)
 ds = DataStructure()
-ds.set_native_datapath("test_data/pickled_data/fashion_original_small.pkl")
+ds.set_native_datapath("test_data/pickled_data/fashion_large.pkl")
 ds.load_dataset(True)
 
 
 t = Trainer()
-t.train(3, model_0, ds, "BCE", "SGD", 0.001, "ANY")
+t.train(5, model_0, ds, "BCE", "SGD", 0.001, "ANY")

@@ -7,7 +7,7 @@ from matplotlib.pyplot import imshow
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import ToTensor
 from utilities.directory_handling import verify_directory
-from math import ceil
+from math import ceil, floor
 import cv2
 import pickle
 
@@ -23,12 +23,11 @@ class CustomDataset(Dataset):
             self.images.append(datapoint[0])
             self.labels.append(datapoint[1])
 
-
     def __len__(self):
         return len(self.images)
 
     def __getitem__(self, idx):
-        return self.images[idx], self.labels[idx]
+        return self.images[idx].float(), self.labels[idx]
 
 
 def encode_image(image_path):
@@ -39,7 +38,7 @@ def encode_image(image_path):
               f"Exiting...")
         quit()
 
-    pixel_array = torch.from_numpy(pixel_array).float()
+    pixel_array = torch.from_numpy(pixel_array)
 
     return pixel_array
 
@@ -54,7 +53,7 @@ class DataStructure:
         self.dataloaders = []
 
     @staticmethod
-    def _transform_raw_data_to_dataloaders(raw_data: list, partitions: int, batch_size: int):
+    def _transform_raw_data_to_dataloader(raw_data: list, partitions: int, batch_size: int):
         """
         Only to be used within object
         """
@@ -105,13 +104,12 @@ class DataStructure:
         for directory in images_directories:
             directory = Path(str(directory))
             for image in directory.iterdir():
-                print(f"Encoding {image}")
                 image_array = encode_image(image)
                 image_label = get_image_label_from_name(str(image))
 
                 raw_data.append((image_array, torch.tensor(int(image_label))))
 
-        partitioned_data = self._transform_raw_data_to_dataloaders(raw_data, partitions, batch_size)
+        partitioned_data = self._transform_raw_data_to_dataloader(raw_data, partitions, batch_size)
 
         # Save the dataloaders to given path and update native data path
         if not savefile_name.endswith(".pkl"):
@@ -129,6 +127,133 @@ class DataStructure:
         partitioned_data.clear()
 
         self.native_data_path = Path(str(save_directory) + "/" + savefile_name).resolve()
+
+    def create_dataset(self, images_directories: list, partitions: int, batch_size: int, save_directory: str | Path,
+                       number_of_images_to_use:int|str|float = "All", negative_split_percentage:float=None, use_all_positive=False):
+        """
+        Encodes all the images found within each image directory provided and loads them into <partitions>-dataloaders with
+        the provided batch sizes. It then saves these dataloaders in pickle format to the given save directory, naming the
+        pickled file savefile_name.
+        :param images_directories: List of directories to be searched for images
+        :param partitions: Number of dataloaders to be created (number of partitions data should be split into
+        :param batch_size: Number of images per batch in the dataloaders
+        :param save_directory: Directory .pkl file should be saved to
+        :param number_of_images_to_use: Number of images from the pool of images that will be used to construct the
+        dataset.
+        :param negative_split_percentage: Percentage of total dataset that will contain negatively labeled (0) images
+        :param use_all_positive: Use all the positively labeled (1) images and fill up the rest of the dataset  to match
+        either the split or the number of images to use.
+        """
+
+        print("Creating dataset...")
+        verify_directory(save_directory, 2)
+
+        # Get list of image filenames
+        image_paths_list = []
+
+        for directory in images_directories:
+            directory = Path(str(directory))
+            image_paths_list += list(directory.iterdir())
+
+        self._verify_dataset_split_params(number_of_images_to_use, negative_split_percentage, use_all_positive)
+
+
+
+        # images_per_partition =
+
+        #     for image in directory.iterdir():
+        #         image_array = encode_image(image)
+        #         image_label = get_image_label_from_name(str(image))
+        #
+        #         raw_data.append((image_array, torch.tensor(int(image_label))))
+        #
+        # partitioned_data = self._transform_raw_data_to_dataloader(raw_data, partitions, batch_size)
+
+        # # Save the dataloaders to given path and update native data path
+        # if not savefile_base_name.endswith(".pkl"):
+        #     if "." in savefile_base_name:
+        #         savefile_name = savefile_base_name[0:savefile_base_name.rindex(".")]
+        #         print("Overwriting extension of save filename with .pkl")
+        #
+        #     savefile_base_name += ".pkl"
+        #
+        # with open(str(save_directory) + "/" + savefile_base_name, "wb") as savefile:
+        #     pickle.dump(partitioned_data, savefile)
+        #
+        # print(f"Compressed datafile saved at {str(save_directory) + "/" + savefile_base_name}")
+        #
+        # partitioned_data.clear()
+        #
+        # self.native_data_path = Path(str(save_directory) + "/" + savefile_base_name).resolve()
+
+    @staticmethod
+    def _verify_dataset_split_params(number_of_images_to_use, negative_split_percentage, use_all_positive):
+        """
+        ALl error messages for incorrect parameter usage
+        """
+        # Verify number of files to pull
+        try:
+            number_of_images_to_use = floor(float(number_of_images_to_use))
+        except ValueError:
+            pass
+
+        if str(number_of_images_to_use).upper() != "ALL" and \
+                (not isinstance(number_of_images_to_use, int) or number_of_images_to_use <= 0):
+            print(f"Error while creating dataset.\n"
+                  f"{number_of_images_to_use} is not a valid parameter value for number_of_images_to_use. "
+                  f"Must be either 'All' (default) or a positive number >= 1.")
+            quit()
+
+
+        # Verify class split
+        if negative_split_percentage or negative_split_percentage == 0.0:
+            try:
+                float(negative_split_percentage)
+                if not 0 <= negative_split_percentage <= 1:
+                    raise ValueError
+
+            except ValueError:
+                print(f"Error while creating dataset.\n"
+                      f"{negative_split_percentage} is not a valid parameter value for negative_split_percentage. "
+                      f"Must be a value between 0 and 1 or None (default)")
+                quit()
+
+
+        if not isinstance(use_all_positive, bool) and not (isinstance(use_all_positive, int) and use_all_positive in (0,1)):
+            print(f"Error while creating dataset.\n"
+                      f"{use_all_positive} is not a valid parameter value for use_all_positive. "
+                      f"Must be True or False (False default)")
+            quit()
+
+    @staticmethod
+    def _get_split_values(num_available_images, number_of_images_to_use, negative_split_percentage, use_all_positive):
+        try:
+            number_of_images_to_use = floor(float(number_of_images_to_use))
+        except ValueError:
+            pass
+
+        if str(number_of_images_to_use).upper() == "ALL":
+            number_of_images_to_use = num_available_images
+
+        if number_of_images_to_use > num_available_images:
+            print(f"Error:"
+                  f"Number of images to use {number_of_images_to_use} is more than the number of images available {num_available_images}")
+            quit()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     def load_dataset(self, use_native_data: bool, pickled_data_path = ""):
@@ -195,13 +320,13 @@ class DataStructure:
             del dl
 
         # Reload randomly into dataloaders
-        partitioned_data = self._transform_raw_data_to_dataloaders(raw_data, num_partitions, batch_size)
+        partitioned_data = self._transform_raw_data_to_dataloader(raw_data, num_partitions, batch_size)
 
         self.dataloaders = partitioned_data
         return partitioned_data
 
 
-    def delete_data(self, delete_native=False, filepath=""):
+    def delete_data(self, delete_native=False, filepath=""): #TODO add native delete
         if not delete_native and not filepath:
             print("Error in delete_data(). Need to select delete_native as true or provide filepath to file for deleting.")
             quit()
@@ -265,8 +390,6 @@ class DataStructure:
         # Get data
         print("Retrieving FashionMNIST data...")
 
-        verify_directory(fashionMNIST_data_path, 0)
-
         train_data = datasets.FashionMNIST(fashionMNIST_data_path,True, ToTensor(), None,
 True)
 
@@ -280,7 +403,7 @@ True)
             elif item[1] == 9:
                 filtered_data.append((item[0], 1))
 
-        partitioned_data = self._transform_raw_data_to_dataloaders(filtered_data, partitions, batch_size)
+        partitioned_data = self._transform_raw_data_to_dataloader(filtered_data, partitions, batch_size)
         self.dataloaders = partitioned_data
         return partitioned_data
 
@@ -289,11 +412,8 @@ True)
 
 if __name__ == "__main__":
     d = DataStructure()
-    # d.fashion_mnist_to_images(Path("test_data/fashionM"), "test_data/fashion_images")
+    # d.fashion_mnist_to_images(Path("test_data/fashionM"), "test_data/fashion_images_large", [512, 512])
 
-    d.create_compressed_dataset(["test_data/fashion_images/"], 10, 32, "test_data/pickled_data/", "fashion_original_small")
-    # d.set_native_datapath("test_data/pickled_data/fashion.pkl")
-    # d.load_dataset(True)
-    # d.shuffle_data()
+    d.create_dataset(["test_data/fashion_images_large/"], 10, 32, "test_data/pickled_data/", number_of_images_to_use="10000",
+                     negative_split_percentage=None)
 
-    pass
