@@ -1,8 +1,10 @@
 import os.path
 import random
+import shutil
 from pathlib import Path
 import numpy as np
 import torch
+from h5py.h5pl import append
 from matplotlib.pyplot import imshow
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import ToTensor
@@ -42,10 +44,22 @@ def encode_image(image_path):
 
     return pixel_array
 
-def get_image_label_from_name(image_name: str):
+def get_image_label_from_name(image_name: str|Path):
+    """
+    Returns the number between the final _ and . of a file path or name
+    :param image_name:
+    :return:
+    """
+    image_name = str(image_name)
     last_underscore_index = image_name.rindex("_")
     extension_index = image_name.rindex(".")
-    return image_name[last_underscore_index+1:extension_index]
+
+    try:
+        return int(image_name[last_underscore_index+1:extension_index])
+    except ValueError:
+        print(f"Error when extracting label from image name. {image_name[last_underscore_index+1:extension_index]} is"
+              f"not a valid label. (Needs to be a positive integer (or 0).")
+        quit()
 
 class DataStructure:
     def __init__(self):
@@ -103,7 +117,7 @@ class DataStructure:
         raw_data = []
         for directory in images_directories:
             directory = Path(str(directory))
-            for image in directory.iterdir():
+            for image in directory.resolve().iterdir():
                 image_array = encode_image(image)
                 image_label = get_image_label_from_name(str(image))
 
@@ -129,7 +143,8 @@ class DataStructure:
         self.native_data_path = Path(str(save_directory) + "/" + savefile_name).resolve()
 
     def create_dataset(self, images_directories: list, partitions: int, batch_size: int, save_directory: str | Path,
-                       number_of_images_to_use:int|str|float = "All", negative_split_percentage:float=None, use_all_positive=False):
+                       number_of_negative_images: int|str = "ALL", number_of_positive_images: int|str = "ALL",
+                       negative_split_percentage: float = None):
         """
         Encodes all the images found within each image directory provided and loads them into <partitions>-dataloaders with
         the provided batch sizes. It then saves these dataloaders in pickle format to the given save directory, naming the
@@ -138,11 +153,10 @@ class DataStructure:
         :param partitions: Number of dataloaders to be created (number of partitions data should be split into
         :param batch_size: Number of images per batch in the dataloaders
         :param save_directory: Directory .pkl file should be saved to
-        :param number_of_images_to_use: Number of images from the pool of images that will be used to construct the
-        dataset.
-        :param negative_split_percentage: Percentage of total dataset that will contain negatively labeled (0) images
-        :param use_all_positive: Use all the positively labeled (1) images and fill up the rest of the dataset  to match
-        either the split or the number of images to use.
+        :param number_of_negative_images: Number of negative images to put into dataset (Set to "ALL" by default)
+        :param number_of_positive_images: Number of negative images to put into dataset (Set to "ALL" by default)
+        :param negative_split_percentage: Will disregard number_of_negative_images and number_of_positive_images and
+        will use the maximum number of images that fulfill the split percentage.
         """
 
         print("Creating dataset...")
@@ -150,24 +164,55 @@ class DataStructure:
 
         # Get list of image filenames
         image_paths_list = []
+        positive_image_path_list = []
+        negative_image_path_list = []
 
-        for directory in images_directories:
+        for directory in images_directories: # Make this recursive
             directory = Path(str(directory))
             image_paths_list += list(directory.iterdir())
 
-        self._verify_dataset_split_params(number_of_images_to_use, negative_split_percentage, use_all_positive)
+        while len(image_paths_list) > 0:
+            if get_image_label_from_name(image_paths_list[0]) == 0:
+                negative_image_path_list.append(image_paths_list.pop(0))
+            elif get_image_label_from_name(image_paths_list[0]) == 1:
+                positive_image_path_list.append(image_paths_list.pop(0))
+            else:
+                print(f"None 0 or 1 label found at {image_paths_list[0]}")
+                image_paths_list.pop(0)
+
+        del image_paths_list
+
+        # Verify parameters and get split counts
+        self._verify_dataset_split_params(number_of_negative_images, number_of_positive_images, negative_split_percentage)
+        number_of_negative_images, number_of_positive_images = self._get_split_values(negative_image_path_list,
+                                                                                      positive_image_path_list,
+                                                                                      number_of_negative_images,
+                                                                                      number_of_positive_images,
+                                                                                      negative_split_percentage)
+
+        selected_images = self._select_images(negative_image_path_list, positive_image_path_list,
+                            number_of_negative_images, number_of_positive_images)
+
+        del positive_image_path_list
+        del negative_image_path_list
+
+        partitioned_data =  self._partition_selected_image_paths(partitions, selected_images)
+
+        self._create_and_save_dataloaders(partitioned_data, batch_size, save_directory)
+
+        del partitioned_data
+
+
+        print(f"Done creating dataset. Dataloaders saved in {str(Path(str(save_directory)).resolve())}")
 
 
 
-        # images_per_partition =
 
-        #     for image in directory.iterdir():
-        #         image_array = encode_image(image)
-        #         image_label = get_image_label_from_name(str(image))
-        #
-        #         raw_data.append((image_array, torch.tensor(int(image_label))))
-        #
-        # partitioned_data = self._transform_raw_data_to_dataloader(raw_data, partitions, batch_size)
+
+
+
+
+
 
         # # Save the dataloaders to given path and update native data path
         # if not savefile_base_name.endswith(".pkl"):
@@ -187,23 +232,24 @@ class DataStructure:
         # self.native_data_path = Path(str(save_directory) + "/" + savefile_base_name).resolve()
 
     @staticmethod
-    def _verify_dataset_split_params(number_of_images_to_use, negative_split_percentage, use_all_positive):
+    def _verify_dataset_split_params(number_of_negative_images, number_of_positive_images, negative_split_percentage):
         """
         ALl error messages for incorrect parameter usage
         """
-        # Verify number of files to pull
-        try:
-            number_of_images_to_use = floor(float(number_of_images_to_use))
-        except ValueError:
-            pass
 
-        if str(number_of_images_to_use).upper() != "ALL" and \
-                (not isinstance(number_of_images_to_use, int) or number_of_images_to_use <= 0):
+        if str(number_of_negative_images).upper() != "ALL" and \
+            not (isinstance(number_of_negative_images, int) and number_of_negative_images >= 0):
             print(f"Error while creating dataset.\n"
-                  f"{number_of_images_to_use} is not a valid parameter value for number_of_images_to_use. "
-                  f"Must be either 'All' (default) or a positive number >= 1.")
+                  f"{number_of_negative_images} is not a valid parameter value for number_of_negative_images. "
+                  f"Must be either 'ALL' or a integer > 0")
             quit()
 
+        if str(number_of_positive_images).upper() != "ALL" and \
+            not (isinstance(number_of_positive_images, int) and number_of_positive_images >= 0):
+            print(f"Error while creating dataset.\n"
+                  f"{number_of_positive_images} is not a valid parameter value for number_of_positive_images. "
+                  f"Must be either 'ALL' or a integer > 0")
+            quit()
 
         # Verify class split
         if negative_split_percentage or negative_split_percentage == 0.0:
@@ -219,26 +265,157 @@ class DataStructure:
                 quit()
 
 
-        if not isinstance(use_all_positive, bool) and not (isinstance(use_all_positive, int) and use_all_positive in (0,1)):
-            print(f"Error while creating dataset.\n"
-                      f"{use_all_positive} is not a valid parameter value for use_all_positive. "
-                      f"Must be True or False (False default)")
-            quit()
 
     @staticmethod
-    def _get_split_values(num_available_images, number_of_images_to_use, negative_split_percentage, use_all_positive):
-        try:
-            number_of_images_to_use = floor(float(number_of_images_to_use))
-        except ValueError:
-            pass
+    def _get_split_values(negative_paths: list, positive_paths: list, number_of_negative_images, number_of_positive_images, negative_split_percentage):
 
-        if str(number_of_images_to_use).upper() == "ALL":
-            number_of_images_to_use = num_available_images
 
-        if number_of_images_to_use > num_available_images:
-            print(f"Error:"
-                  f"Number of images to use {number_of_images_to_use} is more than the number of images available {num_available_images}")
+
+        label_counts = [len(negative_paths), len(positive_paths)]
+
+        if negative_split_percentage:
+            if negative_split_percentage == 0.5:
+                number_of_negative_images = min(label_counts[0], label_counts[1])
+                number_of_positive_images = min(label_counts[0], label_counts[1])
+            else:
+                number_of_negative_images = min(label_counts[0], floor((label_counts[1]/(1-negative_split_percentage))*negative_split_percentage))
+                number_of_positive_images = floor((number_of_negative_images/negative_split_percentage)*(1-negative_split_percentage))
+
+            print(f"Parameter <negative_split_percentage> set to {negative_split_percentage}. Overriding number of negative and"
+                  f"positive images to use and using maximum number of images to create split.")
+
+        if number_of_negative_images > label_counts[0]:
+            print(f"Error while creating dataset.\n"
+                  f"Number of available negatively labeled (0) images {label_counts[0]} < "
+                  f"number of required negatively labeled images {number_of_negative_images}")
             quit()
+        if number_of_positive_images > label_counts[0]:
+            print(f"Error while creating dataset.\n"
+                  f"Number of available positively labeled (1) images {label_counts[1]} < "
+                  f"number of required negatively labeled images {number_of_positive_images}")
+            quit()
+
+        return number_of_negative_images, number_of_positive_images
+
+    @staticmethod
+    def _select_images(negative_paths: list, positive_paths: list, number_of_negative_images, number_of_positive_images):
+
+        print(f"\nDataset is being created with {number_of_negative_images}/{len(negative_paths)} negatively labeled images "
+            f"and {number_of_positive_images}/{len(positive_paths)} positively labeled images.")
+
+        selected_negative_images = []
+        selected_positive_images = []
+
+        while len(selected_negative_images) < number_of_negative_images:
+            random_idx = random.randint(0, len(negative_paths)-1)
+            selected_negative_images.append(negative_paths.pop(random_idx))
+
+        while len(selected_positive_images) < number_of_positive_images:
+            random_idx = random.randint(0, len(positive_paths)-1)
+            selected_positive_images.append(positive_paths.pop(random_idx))
+
+        combined_images = []
+        combined_images += selected_negative_images
+        del selected_negative_images
+        combined_images += selected_positive_images
+        del selected_positive_images
+
+
+        return combined_images
+
+    @staticmethod
+    def _partition_selected_image_paths(num_partitions, selected_images):
+
+        if num_partitions > len(selected_images):
+            print(f"Error while creating dataset. More partitions ({num_partitions}) than images ({len(selected_images)}")
+
+        images_per_partition = ceil(len(selected_images)/num_partitions)
+
+        partitions = []
+
+        for i in range(num_partitions):
+            partitions.append([])
+
+        non_full_partitions = [i for i in range(num_partitions)]
+
+        while len(selected_images) > 0:
+            rand_idx = random.randint(0, len(non_full_partitions)-1)
+            selected_partition = non_full_partitions[rand_idx]
+
+            # Make sure each partition has at least one image
+            if len(partitions[selected_partition]) >= 1:
+                for i, partition in enumerate(partitions):
+                    if len(partition) == 0:
+                        selected_partition = i
+
+            partitions[selected_partition].append(selected_images.pop(0))
+
+            if len(partitions[selected_partition]) == images_per_partition:
+                non_full_partitions.remove(selected_partition)
+
+        return partitions
+
+    def _create_and_save_dataloaders(self, partitioned_data, batch_size, save_directory):
+
+        idx = 1
+
+        if len(list(Path(str(save_directory)).iterdir())) > 0:
+            print(f"Dataloader save directory {save_directory} is not empty.")
+            answer = input("Would you like to empty the directory before adding new dataloaders (E), add the new "
+                     "dataloaders to the ones already in the directory (A) or quit (Q)?: ").upper()
+            match answer.upper():
+                case "E":
+                    print("Resetting directory")
+                    shutil.rmtree(Path(str(save_directory)).resolve())
+                    verify_directory(Path(str(save_directory)).resolve(), 2)
+                case "A":
+                    print("Adding new dataloaders to directory")
+                    idx += len(list(Path(str(save_directory)).iterdir()))
+                case _:
+                    print("Exiting...")
+
+
+
+        for partition in partitioned_data:
+            print(f"Writing dataloader {idx}")
+            raw_partition_data = []
+            for path in partition:
+                image_array = encode_image(path)
+                image_label = get_image_label_from_name(str(path))
+
+                raw_partition_data.append((image_array, torch.tensor(int(image_label))))
+
+            dataloader = DataLoader(CustomDataset(raw_partition_data), batch_size, True)
+
+            with open(str(save_directory) + "/" + f"dataloader_{idx}", "wb") as savefile:
+                pickle.dump(dataloader, savefile)
+
+            idx += 1
+
+        del partitioned_data
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -414,6 +591,6 @@ if __name__ == "__main__":
     d = DataStructure()
     # d.fashion_mnist_to_images(Path("test_data/fashionM"), "test_data/fashion_images_large", [512, 512])
 
-    d.create_dataset(["test_data/fashion_images_large/"], 10, 32, "test_data/pickled_data/", number_of_images_to_use="10000",
-                     negative_split_percentage=None)
+    d.create_dataset(["test_data/fashion_images_large/"], 10, 32, "test_data/pickled_data/partitions/",
+                     1000, 1000)
 
