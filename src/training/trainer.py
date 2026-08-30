@@ -13,7 +13,8 @@ class Trainer:
         self.model = model
 
     def train(self, number_of_epochs, model: torch.nn.Module|None=None, data_structure:DataStructure|None=None,
-              loss_function:str="BCE", optimizer:str="SGD", learning_rate:float|int=0.001, target_device:str="Any"):
+              loss_function:str="BCE", optimizer:str="SGD", learning_rate:float|int=0.001, target_device:str="Any",
+              reserve_evaluation_partition=False, save_metrics=True, metrics_to_log=None):
 
         # Parameter Management
         if not self.model and not model:
@@ -45,7 +46,8 @@ class Trainer:
         optim = self._get_optimizer(optimizer, model, learning_rate)
         device = self._get_target_device(target_device)
 
-        run_training_loop(model, data_structure, number_of_epochs, loss_fn, optim, device)
+        run_training_loop(model, data_structure, number_of_epochs, loss_fn, optim, device, reserve_evaluation_partition,
+                          save_metrics, metrics_to_log)
 
 
     @staticmethod
@@ -104,17 +106,6 @@ class Trainer:
     def set_model(self, model):
         self.model = model
 
-    def save(self, savefile_directory, savefile_name: str):
-        verify_directory(savefile_directory, 1)
-
-        if not savefile_name.endswith(".pkl"):
-            savefile_name += ".pkl"
-
-        with open(str(savefile_directory) + "/" + savefile_name, "wb") as file:
-                pickle.dump(self, file)
-
-        print(f"Trainer was successfully saved to {str(savefile_directory)}/{savefile_name}")
-
     def save_model(self):
         if self.model is None:
             print("No native model to save")
@@ -130,10 +121,13 @@ class Trainer:
         :return:
         """
 
-        if not data_structure.dataloaders:
-            data_structure.load_dataset(True)
 
-        for dataloader in data_structure.dataloaders:
+        num_partitions = ds.get_num_partitions()
+
+        dataloader = None
+        for i in range(num_partitions):
+            dataloader = data_structure.get_next_dataloader()
+
             for batch in dataloader:
                 batch_images = batch[0]
                 batch_labels = batch[1]
@@ -152,11 +146,20 @@ class Trainer:
 
 
 model_0 = models.CNN()
-model_0.create_standard(1, 128, 1)
+model_0.create_standard(1, 80, 1)
+# model_0.load("E:/Project/data/PIPELINETEST/Models/Model0/model0.pkl")
 ds = DataStructure()
-ds.set_native_datapath("test_data/pickled_data/fashion_large.pkl")
-ds.load_dataset(True)
-
+ds.reset_dataloader_index()
+ds.set_native_datapath("E:/Project/data/PIPELINETEST/Dataloaders")
 
 t = Trainer()
-t.train(5, model_0, ds, "BCE", "SGD", 0.001, "ANY")
+
+
+
+
+t.train(200, model_0, ds, "BCE", "Adam", 0.001, "ANY", True,
+        metrics_to_log=["Acc", "Bacc", "MCC"])
+
+model_0.save("E:/Project/data/PIPELINETEST/Models/Model0/", "model0.pkl")
+
+

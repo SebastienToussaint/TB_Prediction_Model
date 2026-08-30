@@ -64,7 +64,7 @@ def get_image_label_from_name(image_name: str|Path):
 class DataStructure:
     def __init__(self):
         self.native_data_path = ""
-        self.dataloaders = []
+        self.dataloader_index = 0
 
     @staticmethod
     def _transform_raw_data_to_dataloader(raw_data: list, partitions: int, batch_size: int):
@@ -202,34 +202,9 @@ class DataStructure:
 
         del partitioned_data
 
-
         print(f"Done creating dataset. Dataloaders saved in {str(Path(str(save_directory)).resolve())}")
 
 
-
-
-
-
-
-
-
-
-        # # Save the dataloaders to given path and update native data path
-        # if not savefile_base_name.endswith(".pkl"):
-        #     if "." in savefile_base_name:
-        #         savefile_name = savefile_base_name[0:savefile_base_name.rindex(".")]
-        #         print("Overwriting extension of save filename with .pkl")
-        #
-        #     savefile_base_name += ".pkl"
-        #
-        # with open(str(save_directory) + "/" + savefile_base_name, "wb") as savefile:
-        #     pickle.dump(partitioned_data, savefile)
-        #
-        # print(f"Compressed datafile saved at {str(save_directory) + "/" + savefile_base_name}")
-        #
-        # partitioned_data.clear()
-        #
-        # self.native_data_path = Path(str(save_directory) + "/" + savefile_base_name).resolve()
 
     @staticmethod
     def _verify_dataset_split_params(number_of_negative_images, number_of_positive_images, negative_split_percentage):
@@ -270,6 +245,13 @@ class DataStructure:
     def _get_split_values(negative_paths: list, positive_paths: list, number_of_negative_images, number_of_positive_images, negative_split_percentage):
 
 
+        if str(number_of_negative_images).upper() == "ALL":
+            number_of_negative_images = len(negative_paths)
+
+        if str(number_of_positive_images).upper() == "ALL":
+            number_of_positive_images = len(positive_paths)
+
+
 
         label_counts = [len(negative_paths), len(positive_paths)]
 
@@ -289,10 +271,10 @@ class DataStructure:
                   f"Number of available negatively labeled (0) images {label_counts[0]} < "
                   f"number of required negatively labeled images {number_of_negative_images}")
             quit()
-        if number_of_positive_images > label_counts[0]:
+        if number_of_positive_images > label_counts[1]:
             print(f"Error while creating dataset.\n"
                   f"Number of available positively labeled (1) images {label_counts[1]} < "
-                  f"number of required negatively labeled images {number_of_positive_images}")
+                  f"number of required positively labeled images {number_of_positive_images}")
             quit()
 
         return number_of_negative_images, number_of_positive_images
@@ -394,78 +376,61 @@ class DataStructure:
 
         del partitioned_data
 
+    def get_next_dataloader(self, use_native_datapath: bool = True, path_to_dataloaders:str|Path = None):
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    def load_dataset(self, use_native_data: bool, pickled_data_path = ""):
-        """
-        Loads the pickled data at the native or given datapath.
-        Native path is set when using create_compressed_dataset or set_native_datapath.
-        :param use_native_data: This will make the DataStructure load the data found at it's native data path
-        :param pickled_data_path: Used to load data into the DataLoaders that is not at the native data path.
-        :return: Data loaders with data. Updates the objects data loaders attribute
-        """
-        if not use_native_data and not pickled_data_path:
-            print("Incorrect arguments for load dataset. Need one of use_native_data or pickled_data_path to be True")
-            quit()
-
-        if use_native_data:
-            if not self.native_data_path or not Path(self.native_data_path).exists():
-                print(f"Could not find native data path {self.native_data_path}.\n"
-                      f"Use create_compressed_dataset or set_native_datapath to set the native datapath")
-                quit()
-
-            print(f"Loading native data at {self.native_data_path}...")
-            pickled_data_path = self.native_data_path
-
-        elif not Path(pickled_data_path).exists():
-            print(f"Could not find pickled data path {pickled_data_path}.")
-            quit()
-
+        # Get and verify dataloader paths
+        if use_native_datapath:
+            dataloader_directory = Path(str(self.native_data_path)).resolve()
         else:
-            print(f"Loading custom data at {pickled_data_path}...")
+            dataloader_directory = Path(str(path_to_dataloaders)).resolve()
 
-        with open(pickled_data_path, "rb") as datafile:
-            data_loaders = pickle.load(datafile)
+        verify_directory(dataloader_directory, 0)
 
-        self.dataloaders = data_loaders
-        return data_loaders
+        dataloader_paths = list(dataloader_directory.iterdir())
+        dataloader_paths.sort()
+
+        if self.dataloader_index == len(dataloader_paths):
+            self.dataloader_index = 0
+
+        data_path = dataloader_paths[self.dataloader_index]
+
+        self.dataloader_index += 1
+
+        # print(f"Loading dataloader at {data_path}")
+
+        with open(data_path, "rb") as file:
+            dataloader = pickle.load(file)
+
+        if dataloader is None:
+            print(f"Error while getting dataloader at {dataloader_paths[self.dataloader_index]}, could not de-pickle"
+                  f" object")
+            quit()
+
+
+        return dataloader
+
+
+    def reset_dataloader_index(self):
+        self.dataloader_index = 0
+
+    def get_num_partitions(self, use_native_datapath: bool = True, path_to_dataloaders:str|Path = None):
+        # Get and verify dataloader paths
+        if use_native_datapath:
+            dataloader_directory = Path(str(self.native_data_path)).resolve()
+        else:
+            dataloader_directory = Path(str(path_to_dataloaders)).resolve()
+
+        verify_directory(dataloader_directory, 0)
+
+        return len(list(dataloader_directory.iterdir()))
+
+
+
+
+
+
+
+
 
     def shuffle_data(self):
         """
@@ -591,6 +556,5 @@ if __name__ == "__main__":
     d = DataStructure()
     # d.fashion_mnist_to_images(Path("test_data/fashionM"), "test_data/fashion_images_large", [512, 512])
 
-    d.create_dataset(["test_data/fashion_images_large/"], 10, 32, "test_data/pickled_data/partitions/",
-                     1000, 1000)
+    d.create_dataset([Path("E:/Project/data/PIPELINETEST/Healthy"), Path("E:/Project/data/PIPELINETEST/TB")], 10, 32, "E:/Project/data/PIPELINETEST/Dataloaders")
 

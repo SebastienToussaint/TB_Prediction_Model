@@ -11,6 +11,9 @@ def calculate_positive_likelihood_ratio(inferred_probabilities: list, truth_labe
     tpr = calculate_true_positive_rate(inferred_probabilities, truth_labels)
     fpr = calculate_false_positive_rate(inferred_probabilities, truth_labels)
 
+    if fpr == 0:
+        return 0
+
     return tpr/fpr
 
 def calculate_negative_likelihood_ratio(inferred_probabilities: list, truth_labels: list):
@@ -22,5 +25,8 @@ def calculate_negative_likelihood_ratio(inferred_probabilities: list, truth_labe
 
     fnr = calculate_false_negative_rate(inferred_probabilities, truth_labels)
     tnr = calculate_true_negative_rate(inferred_probabilities, truth_labels)
+
+    if tnr == 0:
+        return 0
 
     return fnr/tnr

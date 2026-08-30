@@ -8,6 +8,7 @@ def calculate_diagnostic_odds_ratio(inferred_probabilities: list, truth_labels: 
     """
 
     lr_positive = calculate_positive_likelihood_ratio(inferred_probabilities, truth_labels)
-    lr_negative = calculate_negative_likelihood_ratio(inferred_probabilities, truth_labels)
+    lr_negative = calculate_negative_likelihood_ratio(inferred_probabilities, truth_labels) + 1
+
 
     return lr_positive/lr_negative

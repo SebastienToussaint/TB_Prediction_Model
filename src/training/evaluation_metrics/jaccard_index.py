@@ -11,4 +11,7 @@ def calculate_jaccard_index(inferred_probabilities: list, truth_labels: list):
     fn = get_false_negatives(inferred_probabilities, truth_labels)[0]
     fp = get_false_positives(inferred_probabilities, truth_labels)[0]
 
+    if (tp+fn+fp) == 0:
+        return 0
+
     return tp/(tp+fn+fp)

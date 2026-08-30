@@ -14,4 +14,7 @@ def calculate_f1_score(inferred_probabilities: list, truth_labels: list):
     top = 2*tp
     bottom = 2*tp + fp + fn
 
+    if bottom == 0:
+        return 0
+
     return top/bottom
