@@ -375,6 +375,6 @@ if __name__ == "__main__":
     d = DataStructure()
     # d.fashion_mnist_to_images(Path("test_data/fashionM"), "test_data/fashion_images")
 
-    d.create_dataset([Path("test_data/fashion_images/")],
-                     10, 32, "test_data/dataloaders",)
+    d.create_dataset([Path("E:/Project/PIPELINETEST/Images/256x256/TB"), Path("E:/Project/PIPELINETEST/Images/256x256/Healthy")],
+                     10, 32, "E:/Project/PIPELINETEST/Dataloaders/256x256_600_images", 300, 300)
 

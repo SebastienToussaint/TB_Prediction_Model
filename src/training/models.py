@@ -22,8 +22,6 @@ class CNN(nn.Module):
         self.test_truth_labels = []
         self.save_directory = ""
 
-        # Whenever adding new parameters, need to add save file
-
     def forward(self, x):
         return self.layers(x)
 
@@ -38,40 +36,27 @@ class CNN(nn.Module):
             self.test_prediction_probabilities.append(test_prediction_probabilities)
             self.test_truth_labels.append(test_truth_labels)
 
-        # print("Saved probabilities")
-        # print(f"Size of probs in memory: {(asizeof(self.train_prediction_probabilities, self.train_truth_labels,
-        #                                            test_prediction_probabilities, test_truth_labels))/1000000} MB")
-
-
-
     def load(self, path_to_model):
-        # if not str(path_to_model).endswith(".pkl"): #TODO: Uncomment but check which extension torch.save uses
-        #     print(f"Error in CNN.load(). Provided path needs to be a .pkl file. (Provided: {path_to_model})")
-        #     quit()
+        if not str(path_to_model).endswith(".pkl"): #TODO: Uncomment but check which extension torch.save uses
+            print(f"Error in CNN.load(). Provided path needs to be a .pkl file. (Provided: {path_to_model})")
+            quit()
 
         verify_directory(path_to_model, 0)
 
-
-        # with open(path_to_model, "rb") as file:
         self.__dict__.update(
         torch.load(path_to_model, map_location=(torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")),
                    weights_only=False).__dict__)
-        #     loaded_data = pickle.load(file)
-        #     self.model_type = loaded_data[0].copy()
-        #     self.layers = loaded_data[1].copy()
-        #     self.evaluations = loaded_data[2].copy()
-        #     self.prediction_probabilities = loaded_data[3].copy()
-        #     self.truth_labels = loaded_data[4].copy()
-        #
-        # del loaded_data
 
         print(f"Loaded model from {path_to_model}")
         self.save_directory = path_to_model
 
         return self
 
+    def get_memory_space(self):
+        return asizeof(self)/1000000
 
-    def save(self, save_directory: str | Path, savefile_name: str):
+
+    def save(self, save_directory: str | Path = "", savefile_name: str = "model"):
 
         if not savefile_name.endswith(".pkl"):
             if "." in savefile_name:
@@ -86,14 +71,10 @@ class CNN(nn.Module):
 
         save_directory = str(Path(str(save_directory)).resolve())
 
-
-        # save_data = [self.model_type, self.layers, self.evaluations, self.prediction_probabilities, self.truth_labels]
+        self.save_directory = save_directory + "/" + savefile_name
 
         # TODO: Check this works as intended
         torch.save(self, save_directory + "/" + savefile_name)
-        #
-        # with open(save_directory + "/" + savefile_name, "wb") as savefile:
-        #     pickle.dump(self, savefile)
 
         print(f"Compressed datafile saved at {save_directory + "/" + savefile_name}")
 
@@ -109,15 +90,17 @@ class CNN(nn.Module):
         Creates a standard CNN structure
         """
         self.layers = nn.Sequential(
-            nn.Conv2d(colour_channels, hidden_units,3,1, 1),
+            nn.Conv2d(colour_channels, hidden_units,3, padding=1),
             nn.ReLU(),
+            nn.MaxPool2d(2),
 
-            nn.Conv2d(hidden_units, hidden_units,3,1, 1),
+            nn.Conv2d(hidden_units, hidden_units,3, padding=1),
             nn.ReLU(),
             nn.MaxPool2d(2),
 
             nn.Conv2d(hidden_units, hidden_units*2, 3, padding=1),
             nn.ReLU(),
+            nn.MaxPool2d(2),
 
             nn.Conv2d(hidden_units*2, hidden_units*2, 3, padding=1),
             nn.ReLU(),
@@ -128,15 +111,9 @@ class CNN(nn.Module):
             nn.Linear(hidden_units*2, output_shape)
         )
 
+
     def calculate_batch_metrics(self, group_batches: int= 1):
 
-
-        # num_epochs = len(self.prediction_probabilities)
-        # num_batches_per_epoch = len(self.prediction_probabilities[0])
-        # batch_length = len(self.prediction_probabilities[0][0])
-
-        # print(f"{num_epochs} epochs with {num_batches_per_epoch} batches, each containing {batch_length} images, "
-        #       f"for a total of {num_epochs*num_batches_per_epoch} batches and {num_epochs*num_batches_per_epoch*batch_length} images")
 
         metrics = ["accuracy", "balanced_accuracy", "recall", "specificity", "precision", "dor", "f1", "fowlkes_mallows_index",
                    "informedness", "jaccard_index", "markedness", "mcc", "prevalence_threshold"]

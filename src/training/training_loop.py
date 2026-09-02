@@ -101,7 +101,9 @@ def run_training_loop(model: nn.Module, data_structure: data_handling.DataStruct
             # Get the next chunk of data
             train_dataloader = data_structure.get_next_dataloader()
 
+
             for batch, (images, labels) in enumerate(train_dataloader):
+
                 images, labels = images.to(target_device), labels.to(target_device)
 
                 # Infer labels
@@ -115,7 +117,7 @@ def run_training_loop(model: nn.Module, data_structure: data_handling.DataStruct
 
                 # Perform standard training loop operations
                 batch_loss = loss_fn(inferred_logits, labels.float())
-                total_train_loss += batch_loss
+                total_train_loss += batch_loss.item()
                 train_batches_processed += 1
 
                 optimizer.zero_grad()
@@ -152,7 +154,7 @@ def run_training_loop(model: nn.Module, data_structure: data_handling.DataStruct
                     testing_probs.append(inferred_prediction_values.detach().cpu().tolist())
                     testing_labels.append(labels.detach().cpu().tolist())
 
-                    total_test_loss += loss_fn(inferred_logits, labels.float())
+                    total_test_loss += loss_fn(inferred_logits, labels.float()).item()
                     test_batches_processed += 1
 
         # =========================================================================================

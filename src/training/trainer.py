@@ -49,7 +49,6 @@ class Trainer:
         run_training_loop(model, data_structure, number_of_epochs, loss_fn, optim, device, reserve_evaluation_partition,
                           save_metrics, metrics_to_log)
 
-
     @staticmethod
     def _get_optimizer(name, model, lr):
         match name.upper():
@@ -106,13 +105,6 @@ class Trainer:
     def set_model(self, model):
         self.model = model
 
-    def save_model(self):
-        if self.model is None:
-            print("No native model to save")
-            return
-
-        self.model.save()
-
     @staticmethod
     def manual_observation(model, data_structure: DataStructure):
         """
@@ -152,21 +144,21 @@ class Trainer:
 
 if __name__ == "__main__":
     model_0 = models.CNN()
-    model_0.create_standard(1, 64, 1)
+    model_0.create_standard(1, 80, 1)
     # model_0.load("saved_models/Model0/model0.pkl")
     ds = DataStructure()
     ds.reset_dataloader_index()
-    ds.set_native_datapath("test_data/dataloaders")
+    ds.set_native_datapath("E:/Project/PIPELINETEST/Dataloaders/512x512_600_images/")
 
     t = Trainer()
 
 
 
 
-    t.train(5, model_0, ds, "BCE", "Adam", 0.001, "ANY", True,
+    t.train(200, model_0, ds, "BCE", "Adam", 0.001, "ANY", True,
             metrics_to_log=["Acc", "Bacc", "MCC"])
 
-    model_0.save("saved_models/Model0/", "model0.pkl")
+    model_0.save("E:/Project/PIPELINETEST/Models/Model_full_size_images", "model_512x512.pkl")
 
     # t.manual_observation(model_0, ds)
 
