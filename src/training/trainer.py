@@ -121,6 +121,7 @@ class Trainer:
         :return:
         """
 
+        model.to("cpu")
 
         num_partitions = ds.get_num_partitions()
 
@@ -131,6 +132,9 @@ class Trainer:
             for batch in dataloader:
                 batch_images = batch[0]
                 batch_labels = batch[1]
+
+                batch_images.to("cpu")
+                batch_labels.to("cpu")
 
                 batch_images = batch_images.unsqueeze(1)
                 predicted_labels = torch.round(torch.sigmoid(model(batch_images)))
@@ -145,21 +149,24 @@ class Trainer:
                     plt.show()
 
 
-model_0 = models.CNN()
-model_0.create_standard(1, 80, 1)
-# model_0.load("E:/Project/data/PIPELINETEST/Models/Model0/model0.pkl")
-ds = DataStructure()
-ds.reset_dataloader_index()
-ds.set_native_datapath("E:/Project/data/PIPELINETEST/Dataloaders")
 
-t = Trainer()
+if __name__ == "__main__":
+    model_0 = models.CNN()
+    model_0.create_standard(1, 64, 1)
+    # model_0.load("saved_models/Model0/model0.pkl")
+    ds = DataStructure()
+    ds.reset_dataloader_index()
+    ds.set_native_datapath("test_data/dataloaders")
+
+    t = Trainer()
 
 
 
 
-t.train(200, model_0, ds, "BCE", "Adam", 0.001, "ANY", True,
-        metrics_to_log=["Acc", "Bacc", "MCC"])
+    t.train(5, model_0, ds, "BCE", "Adam", 0.001, "ANY", True,
+            metrics_to_log=["Acc", "Bacc", "MCC"])
 
-model_0.save("E:/Project/data/PIPELINETEST/Models/Model0/", "model0.pkl")
+    model_0.save("saved_models/Model0/", "model0.pkl")
 
+    # t.manual_observation(model_0, ds)
 

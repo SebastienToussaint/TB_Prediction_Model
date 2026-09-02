@@ -1,4 +1,5 @@
 import pickle
+import torch.cuda
 from pympler.asizeof import asizeof
 from torch import nn
 from utilities.directory_handling import verify_directory
@@ -14,8 +15,7 @@ class CNN(nn.Module):
         self.model_type = "cnn"
         self.layers = nn.Sequential(
         )
-        self.training_batch_evaluations = {}
-        self.testing_batch_evaluations = {}
+
         self.train_prediction_probabilities = []
         self.train_truth_labels = []
         self.test_prediction_probabilities = []
@@ -45,15 +45,17 @@ class CNN(nn.Module):
 
 
     def load(self, path_to_model):
-        if not str(path_to_model).endswith(".pkl"):
-            print(f"Error in CNN.load(). Provided path needs to be a .pkl file. (Provided: {path_to_model})")
-            quit()
+        # if not str(path_to_model).endswith(".pkl"): #TODO: Uncomment but check which extension torch.save uses
+        #     print(f"Error in CNN.load(). Provided path needs to be a .pkl file. (Provided: {path_to_model})")
+        #     quit()
 
         verify_directory(path_to_model, 0)
 
 
-        with open(path_to_model, "rb") as file:
-            self.__dict__.update(pickle.load(file).__dict__)
+        # with open(path_to_model, "rb") as file:
+        self.__dict__.update(
+        torch.load(path_to_model, map_location=(torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")),
+                   weights_only=False).__dict__)
         #     loaded_data = pickle.load(file)
         #     self.model_type = loaded_data[0].copy()
         #     self.layers = loaded_data[1].copy()
@@ -87,8 +89,11 @@ class CNN(nn.Module):
 
         # save_data = [self.model_type, self.layers, self.evaluations, self.prediction_probabilities, self.truth_labels]
 
-        with open(save_directory + "/" + savefile_name, "wb") as savefile:
-            pickle.dump(self, savefile)
+        # TODO: Check this works as intended
+        torch.save(self, save_directory + "/" + savefile_name)
+        #
+        # with open(save_directory + "/" + savefile_name, "wb") as savefile:
+        #     pickle.dump(self, savefile)
 
         print(f"Compressed datafile saved at {save_directory + "/" + savefile_name}")
 
@@ -136,68 +141,119 @@ class CNN(nn.Module):
         metrics = ["accuracy", "balanced_accuracy", "recall", "specificity", "precision", "dor", "f1", "fowlkes_mallows_index",
                    "informedness", "jaccard_index", "markedness", "mcc", "prevalence_threshold"]
 
+        training_evaluations = {}
+        testing_evaluations = {}
+
         for metric in metrics:
-            if not self.training_batch_evaluations.get(metric):
-                self.training_batch_evaluations[metric] = []
+            if not training_evaluations.get(metric):
+                training_evaluations[metric] = []
+            if not testing_evaluations.get(metric):
+                testing_evaluations[metric] = []
 
         for epoch, epoch_probabilities in enumerate(self.train_prediction_probabilities):
             for batch_num, batch_probabilities in enumerate(epoch_probabilities):
-                self.training_batch_evaluations["accuracy"].append(accuracy.calculate_accuracy(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
+                training_evaluations["accuracy"].append(accuracy.calculate_accuracy(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
 
-                self.training_batch_evaluations["balanced_accuracy"].append(
+                training_evaluations["balanced_accuracy"].append(
                     accuracy.calculate_balanced_accuracy(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
 
-                self.training_batch_evaluations["recall"].append(
+                training_evaluations["recall"].append(
                     core_metrics.calculate_recall(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
 
-                self.training_batch_evaluations["specificity"].append(
+                training_evaluations["specificity"].append(
                     core_metrics.calculate_specificity(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
 
-                self.training_batch_evaluations["precision"].append(
+                training_evaluations["precision"].append(
                     core_metrics.calculate_precision(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
 
-                self.training_batch_evaluations["dor"].append(
+                training_evaluations["dor"].append(
                     diagnostic_odds_ratio.calculate_diagnostic_odds_ratio(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
 
-                self.training_batch_evaluations["f1"].append(
+                training_evaluations["f1"].append(
                     f1_score.calculate_f1_score(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
 
-                self.training_batch_evaluations["fowlkes_mallows_index"].append(
+                training_evaluations["fowlkes_mallows_index"].append(
                     fowlkes_mallows_index.calculate_fowlkes_mallows_index(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
 
-                self.training_batch_evaluations["informedness"].append(
+                training_evaluations["informedness"].append(
                     informedness.calculate_informedness(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
 
-                self.training_batch_evaluations["jaccard_index"].append(
+                training_evaluations["jaccard_index"].append(
                     jaccard_index.calculate_jaccard_index(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
 
-                self.training_batch_evaluations["markedness"].append(
+                training_evaluations["markedness"].append(
                     markedness.calculate_markedness(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
 
-                self.training_batch_evaluations["mcc"].append(
+                training_evaluations["mcc"].append(
                     mcc.calculate_matthews_correlation_coefficient(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
 
-                self.training_batch_evaluations["prevalence_threshold"].append(
+                training_evaluations["prevalence_threshold"].append(
                     prevalence_threshold.calculate_prevalence_threshold(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
 
-        return self.training_batch_evaluations
+        for epoch, epoch_probabilities in enumerate(self.test_prediction_probabilities):
+            for batch_num, batch_probabilities in enumerate(epoch_probabilities):
+                testing_evaluations["accuracy"].append(accuracy.calculate_accuracy(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
 
-    def draw_eval_graphs(self, save_directory:str|Path = "", window_size: int = None):
+                testing_evaluations["balanced_accuracy"].append(
+                    accuracy.calculate_balanced_accuracy(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
+
+                testing_evaluations["recall"].append(
+                    core_metrics.calculate_recall(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
+
+                testing_evaluations["specificity"].append(
+                    core_metrics.calculate_specificity(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
+
+                testing_evaluations["precision"].append(
+                    core_metrics.calculate_precision(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
+
+                testing_evaluations["dor"].append(
+                    diagnostic_odds_ratio.calculate_diagnostic_odds_ratio(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
+
+                testing_evaluations["f1"].append(
+                    f1_score.calculate_f1_score(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
+
+                testing_evaluations["fowlkes_mallows_index"].append(
+                    fowlkes_mallows_index.calculate_fowlkes_mallows_index(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
+
+                testing_evaluations["informedness"].append(
+                    informedness.calculate_informedness(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
+
+                testing_evaluations["jaccard_index"].append(
+                    jaccard_index.calculate_jaccard_index(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
+
+                testing_evaluations["markedness"].append(
+                    markedness.calculate_markedness(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
+
+                testing_evaluations["mcc"].append(
+                    mcc.calculate_matthews_correlation_coefficient(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
+
+                testing_evaluations["prevalence_threshold"].append(
+                    prevalence_threshold.calculate_prevalence_threshold(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
+
+        return training_evaluations, testing_evaluations
+
+    def draw_eval_graphs(self, save_directory:str|Path = "", window_size: int = None,
+                         group_batches: int = 1):
+
         metrics = ["accuracy", "balanced_accuracy", "recall", "specificity", "precision", "dor", "f1",
                    "fowlkes_mallows_index",
                    "informedness", "jaccard_index", "markedness", "mcc", "prevalence_threshold"]
 
         verify_directory(save_directory, 2)
 
+        training_evaluations, testing_evaluations = self.calculate_batch_metrics(group_batches)
+
         if not window_size:
-            window = max(3, int(len(self.training_batch_evaluations["accuracy"])/20))
+            window = max(3, int(len(training_evaluations["accuracy"])/20))
         else:
             window = window_size
 
+
+
         for metric in metrics:
-            plt.plot(self.training_batch_evaluations[metric], alpha=0.2, label = "Raw")
-            plt.plot(range(window - 1, len(self.training_batch_evaluations[metric])),
-                     np.convolve(self.training_batch_evaluations[metric], np.ones(window) / window, mode="valid"),
+            plt.plot(training_evaluations[metric], alpha=0.2, label = "Raw")
+            plt.plot(range(window - 1, len(training_evaluations[metric])),
+                     np.convolve(training_evaluations[metric], np.ones(window) / window, mode="valid"),
                      linewidth=2,
                      label="Smoothed")
 
@@ -205,23 +261,31 @@ class CNN(nn.Module):
             plt.xlabel("Batch")
             plt.ylabel(metric)
             plt.legend()
-            plt.savefig(str(Path(str(save_directory)).resolve()) + "/" + metric + ".svg", format="svg")
+            plt.savefig(str(Path(str(save_directory)).resolve()) + "/training_" + metric + ".svg", format="svg")
             plt.close()
+
+        if len(testing_evaluations["accuracy"]) > 0:
+            for metric in metrics:
+                plt.plot(testing_evaluations[metric], alpha=0.2, label="Raw")
+                plt.plot(range(window - 1, len(testing_evaluations[metric])),
+                         np.convolve(testing_evaluations[metric], np.ones(window) / window, mode="valid"),
+                         linewidth=2,
+                         label="Smoothed")
+
+                plt.title(f"{metric} change over batches")
+                plt.xlabel("Batch")
+                plt.ylabel(metric)
+                plt.legend()
+                plt.savefig(str(Path(str(save_directory)).resolve()) + "/testing_" + metric + ".svg", format="svg")
+                plt.close()
+
 
         print(f"Eval graphs successfully created and saved at {str(Path(str(save_directory)).resolve())}")
 
 
 
-
-
-
-
-
-
-
-
 if __name__ == "__main__":
     m = CNN()
-    m.load("E:/Project\data\PIPELINETEST\Models\Model0\model0.pkl")
+    m.load("saved_models/Model0/model0.pkl")
     m.calculate_batch_metrics()
-    m.draw_eval_graphs("E:/Project/data/PIPELINETEST/Models/Model0/Metrics")
+    m.draw_eval_graphs("saved_models/Model0/Metrics")
