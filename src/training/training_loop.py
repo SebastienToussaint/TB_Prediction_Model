@@ -104,6 +104,8 @@ def run_training_loop(model: nn.Module, data_structure: data_handling.DataStruct
 
             for batch, (images, labels) in enumerate(train_dataloader):
 
+                print(images.dtype)
+
                 images, labels = images.to(target_device), labels.to(target_device)
 
                 # Infer labels

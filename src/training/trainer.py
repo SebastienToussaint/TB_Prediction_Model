@@ -1,3 +1,5 @@
+import time
+
 import torch
 import matplotlib.pyplot as plt
 import pickle
@@ -117,48 +119,55 @@ class Trainer:
 
         num_partitions = ds.get_num_partitions()
 
-        dataloader = None
-        for i in range(num_partitions):
-            dataloader = data_structure.get_next_dataloader()
 
-            for batch in dataloader:
-                batch_images = batch[0]
-                batch_labels = batch[1]
+        model.eval()
 
-                batch_images.to("cpu")
-                batch_labels.to("cpu")
+        with torch.inference_mode():
+            dataloader = None
+            for i in range(num_partitions):
+                dataloader = data_structure.get_next_dataloader()
 
-                batch_images = batch_images.unsqueeze(1)
-                predicted_labels = torch.round(torch.sigmoid(model(batch_images)))
+                for batch in dataloader:
+                    batch_images = batch[0]
+                    batch_labels = batch[1]
+
+                    batch_images = batch_images.to("cpu")
+                    batch_labels = batch_labels.to("cpu")
+
+                    batch_images = batch_images.unsqueeze(1)
+                    predicted_labels = torch.round(torch.sigmoid(model(batch_images)))
 
 
-                for i in range(len(batch_images)):
+                    for i in range(len(batch_images)):
 
-                    img = batch_images[i].squeeze()
-                    label = batch_labels[i]
-                    plt.imshow(img, cmap="gray")
-                    plt.title(f"Predicted: {predicted_labels[i].item()} Real: {label}")
-                    plt.show()
+                        img = batch_images[i].squeeze()
+
+                        print(img.dtype)
+                        label = batch_labels[i]
+                        plt.imshow(img, cmap="gray")
+                        plt.title(f"Predicted: {predicted_labels[i].item()} Real: {label}")
+                        plt.show()
 
 
 
 if __name__ == "__main__":
     model_0 = models.CNN()
-    model_0.create_standard(1, 80, 1)
-    # model_0.load("saved_models/Model0/model0.pkl")
+    # model_0.create_standard(1, 80, 1)
+    model_0.load("E:\Project\Savefiles\Models\HPC_MIXED\model_mixed.pkl")
     ds = DataStructure()
     ds.reset_dataloader_index()
-    ds.set_native_datapath("E:/Project/PIPELINETEST/Dataloaders/512x512_600_images/")
-
+    ds.set_native_datapath("E:\Project\PIPELINETEST\Dataloaders/512x512_mixed_images")
+    # ds.set_native_datapath("E:/Project/data/tests/dataloaders/")
     t = Trainer()
 
 
 
 
-    t.train(200, model_0, ds, "BCE", "Adam", 0.001, "ANY", True,
-            metrics_to_log=["Acc", "Bacc", "MCC"])
+    # t.train(200, model_0, ds, "BCE", "Adam", 0.001, "ANY", True,
+            # metrics_to_log=["Acc", "Bacc", "MCC"])
 
-    model_0.save("E:/Project/PIPELINETEST/Models/Model_full_size_images", "model_512x512.pkl")
+    # model_0.save("E:/Project/PIPELINETEST/Models/Model_full_size_images", "model_512x512.pkl")
 
-    # t.manual_observation(model_0, ds)
+    t.manual_observation(model_0, ds)
 
+    time.sleep(200)

@@ -2,6 +2,8 @@ import os.path
 import random
 import shutil
 from pathlib import Path
+
+import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset
 from utilities.directory_handling import verify_directory
@@ -42,12 +44,15 @@ class DataStructure:
         :param image_path: File path to image.
         :return: Image tensor
         """
-        pixel_array = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+        pixel_array = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
 
         if pixel_array is None:
             print(f"Could not load image at {image_path}.\n"
                   f"Exiting...")
             quit()
+
+        if pixel_array.dtype == np.uint16:
+            pixel_array = pixel_array.astype(np.float32)
 
         pixel_array = torch.from_numpy(pixel_array)
 
@@ -375,6 +380,6 @@ if __name__ == "__main__":
     d = DataStructure()
     # d.fashion_mnist_to_images(Path("test_data/fashionM"), "test_data/fashion_images")
 
-    d.create_dataset([Path("E:/Project/PIPELINETEST/Images/256x256/TB"), Path("E:/Project/PIPELINETEST/Images/256x256/Healthy")],
-                     10, 32, "E:/Project/PIPELINETEST/Dataloaders/256x256_600_images", 300, 300)
+    d.create_dataset([Path("E:/Project/data/tests/images")],
+                     1, 52, "E:/Project/data/tests/dataloaders")
 

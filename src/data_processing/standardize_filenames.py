@@ -71,29 +71,30 @@ def rename_file_csv(file, csv_data, file_index, number_of_files):
 # Label to add (if keep label 0 and add label 1)
 
 # Argument Management
-if len(sys.argv) != 5:
+try:
+    directory_path = Path(sys.argv[1])
+    verify_directory(directory_path, 0)
+
+    metadata_filepath = sys.argv[2]
+
+    prefix = sys.argv[3]
+    keep_labels = int(sys.argv[4])
+    label_tag = "" # Prevent reference error
+    if keep_labels:
+        label_tag = sys.argv[5]
+    add_labels = 0 # Prevent reference error
+    label_to_add = "" # Prevent reference error
+    if not keep_labels and len(sys.argv) >= 5:
+        add_labels = int(sys.argv[5])
+        if add_labels:
+            label_to_add = sys.argv[6]
+except:
     print("ERROR: Incorrect arguments provided\n"
-              "Usage: make standardize_filenames ARGS='<directory_to_search> <metadata_directory (None)> <new_prefix>"
-              " <keep_labels [0,1]> <label_identifier (if keep_labels = 1)> "
+          "Usage: make standardize_filenames ARGS='<directory_to_search> <metadata_directory (None)> <new_prefix>"
+          " <keep_labels [0,1]> <label_identifier (if keep_labels = 1)> "
           "(optional) <add_label [0, 1] (if keep_labels = 0)> <label_to_add>'")
     quit()
 
-directory_path = Path(sys.argv[1])
-verify_directory(directory_path, 0)
-
-metadata_filepath = sys.argv[2]
-
-prefix = sys.argv[3]
-keep_labels = int(sys.argv[4])
-label_tag = "" # Prevent reference error
-if keep_labels:
-    label_tag = sys.argv[5]
-add_labels = 0 # Prevent reference error
-label_to_add = "" # Prevent reference error
-if not keep_labels and len(sys.argv) >= 5:
-    add_labels = int(sys.argv[5])
-    if add_labels:
-        label_to_add = sys.argv[6]
 
 index = 1
 total_num_files = len(list(directory_path.iterdir()))

@@ -59,9 +59,6 @@ standardize_filenames: venv ## (Standardize names of all files in a given direct
 quality_control: venv ## (Recursively check extensions and dimensions of image files, as well as check for duplicate images)
 	@$(BIN)/python data_processing/quality_control.py $(ARGS)
 
-extract_dcm_image: venv ## (Extract images from DICOM files, convert to PNG and save with PID as filename)
-	@$(BIN)/python data_processing/extract_dcm_image.py $(ARGS)
-
 change_extension: venv ## Change all files with a given extension to another (NOTE: put . in new extension ex: .png)
 	@$(BIN)/python data_processing/change_extension.py $(ARGS)
 
