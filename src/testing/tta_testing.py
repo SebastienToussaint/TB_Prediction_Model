@@ -1,5 +1,9 @@
 # Create new images by applying multiple transforms to existing images, including translation, rotation, mirroring etc.
 # Note: Currently only applies transformation to .png images
+import time
+from concurrent.futures import ProcessPoolExecutor
+import os
+from functools import partial
 
 from utilities.directory_handling import verify_directory
 from pathlib import Path
@@ -84,7 +88,6 @@ def transform_image_affine(filepath, savefile_path, num_files_total,
     # Open image and get information
     img = cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)
     img_name = filepath[filepath.rindex("/") + 1:]
-    print(f"Transforming {img_name} ({num_images_transformed}/{num_files_total})")
 
     # Translation
     img = translate_image(img, x_shift_range, y_shift_range)
@@ -116,7 +119,7 @@ def transform_image_contrast():
     # Look at sigmoid based contrast adjustments. Better for x-rays to keep features intact
     pass
 
-
+time1 = time.time()
 if len(sys.argv) != 3:
     print("Error: Incorrect usage\n"
           "Usage: make tta_testing ARGS='<target_directory> <save_directory>'")
@@ -135,13 +138,32 @@ for file in images_directory.iterdir():
         file_count += 1
 
 # Apply transforms to images
-for file in images_directory.iterdir():
-    if file.name.endswith(".png"):
-        transform_image_affine(filepath=f"{images_directory}/{file.name}",
-                               savefile_path=f"{save_directory}",
-                               num_files_total=file_count,
-                               x_shift_range=[-250, 250],
-                               y_shift_range=[-100, 100],
-                               rotation_range=[-10, 10])
+image_paths = list(images_directory.iterdir())
 
-print(f"\nSuccessfully transformed all images in {images_directory.absolute()}/\nTransformed images have been saved to {save_directory.absolute()}/")
+# Filter out non-pngs
+i = 0
+while i < len(image_paths):
+    if not str(image_paths[i]).endswith(".png"):
+        image_paths.pop(i)
+    else:
+        i += 1
+
+transform_affine_partial = partial(
+    transform_image_affine,
+    savefile_path=f"{save_directory}",
+    num_files_total=file_count,
+    x_shift_range=[-250, 250],
+    y_shift_range=[-100, 100],
+    rotation_range=[-10, 10]
+)
+
+worker_count = os.cpu_count() or 1
+print(f"Using {worker_count} workers.")
+with ProcessPoolExecutor(max_workers=worker_count) as executor:
+        executor.map(transform_affine_partial, image_paths )
+
+print(f"\nSuccessfully transformed all images {file_count} in {images_directory.absolute()}/\nTransformed images have been saved to {save_directory.absolute()}/")
+
+time2 = time.time()
+
+print(f"Took {time2-time1}")

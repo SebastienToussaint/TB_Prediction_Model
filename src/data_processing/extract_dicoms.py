@@ -33,7 +33,6 @@ for file in target_directory.iterdir():
 
         image = max_value - image
 
-
         image = image.astype(np.float32)
 
         image = image / max_value * 65535.0

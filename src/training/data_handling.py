@@ -20,10 +20,15 @@ class CustomDataset(Dataset):
     def __init__(self, dataset):
         self.images = []
         self.labels = []
+        self.filepaths = []
 
         for datapoint in dataset:
             self.images.append(datapoint[0])
             self.labels.append(datapoint[1])
+            self.filepaths.append(datapoint[2])
+
+    def get_filepaths(self):
+        return self.filepaths
 
     def __len__(self):
         return len(self.images)
@@ -272,9 +277,13 @@ class DataStructure:
 
         return partitions
 
-    def _create_and_save_dataloaders(self, partitioned_data, batch_size, save_directory):
+    def _create_and_save_dataloaders(self, partitioned_data, batch_size, save_directory: str | Path, overwrite_data=0):
 
         idx = 1
+
+        if overwrite_data:
+            shutil.rmtree(Path(str(save_directory)).resolve())
+            verify_directory(Path(str(save_directory)).resolve(), 2)
 
         if len(list(Path(str(save_directory)).iterdir())) > 0:
             print(f"Dataloader save directory {save_directory} is not empty.")
@@ -298,7 +307,7 @@ class DataStructure:
                 image_array = self.encode_image(path)
                 image_label = self.get_image_label_from_name(str(path))
 
-                raw_partition_data.append((image_array, torch.tensor(int(image_label))))
+                raw_partition_data.append((image_array, torch.tensor(int(image_label)), path))
 
             dataloader = DataLoader(CustomDataset(raw_partition_data), batch_size, True)
 
@@ -308,6 +317,8 @@ class DataStructure:
             idx += 1
 
         del partitioned_data
+
+        self.set_native_datapath(str(save_directory))
 
     def get_next_dataloader(self, use_native_datapath: bool = True, path_to_dataloaders:str|Path = None):
 
@@ -375,11 +386,39 @@ class DataStructure:
 
         self.native_data_path = datapath
 
+    def shuffle_data(self):
+        print("Shuffling data...")
+
+        num_partitions = self.get_num_partitions()
+
+        filepaths = []
+
+        batch_size = 0
+
+        for i in range(num_partitions):
+            partition = self.get_next_dataloader()
+            filepaths.extend(partition.dataset.get_filepaths())
+            for images, labels in partition:
+                if len(images) > batch_size:
+                    batch_size = len(images)
+
+
+
+        # Create shuffled partitions from sampled data
+        partitioned_data = self._partition_selected_image_paths(num_partitions, filepaths)
+
+        # Transform partitions into dataloaders and save them to the save directory
+        self._create_and_save_dataloaders(partitioned_data, batch_size, self.native_data_path, 1)
+
+        del partitioned_data
+
 
 if __name__ == "__main__":
     d = DataStructure()
-    # d.fashion_mnist_to_images(Path("test_data/fashionM"), "test_data/fashion_images")
 
-    d.create_dataset([Path("E:/Project/data/tests/images")],
-                     1, 52, "E:/Project/data/tests/dataloaders")
+    d.create_dataset([Path("test_data/fashion_images/")],
+                     5, 52, "test_data/testloading")
 
+    d.set_native_datapath("test_data/testloading")
+
+    d.shuffle_data()

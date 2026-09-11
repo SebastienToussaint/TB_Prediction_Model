@@ -7,6 +7,8 @@ from utilities.directory_handling import verify_directory
 from data_handling import DataStructure, CustomDataset # Import CustomDataset to prevent error with pickle
 from training_loop import run_training_loop
 import models
+from pathlib import Path
+from evaluation_run import run_evaluation
 
 
 class Trainer:
@@ -148,20 +150,22 @@ class Trainer:
                         plt.title(f"Predicted: {predicted_labels[i].item()} Real: {label}")
                         plt.show()
 
+    @staticmethod
+    def evaluate_model(model, data_structure: DataStructure, save_directory):
+        run_evaluation(model, data_structure, save_directory)
+
+
 
 
 if __name__ == "__main__":
     model_0 = models.CNN()
     # model_0.create_standard(1, 80, 1)
-    model_0.load("E:\Project\Savefiles\Models\HPC_MIXED\model_mixed.pkl")
+    model_0.load("saved_models/Model0/model0.pkl")
     ds = DataStructure()
     ds.reset_dataloader_index()
-    ds.set_native_datapath("E:\Project\PIPELINETEST\Dataloaders/512x512_mixed_images")
+    ds.set_native_datapath("test_data/eval_dataloaders")
     # ds.set_native_datapath("E:/Project/data/tests/dataloaders/")
     t = Trainer()
-
-
-
 
     # t.train(200, model_0, ds, "BCE", "Adam", 0.001, "ANY", True,
             # metrics_to_log=["Acc", "Bacc", "MCC"])
@@ -169,5 +173,4 @@ if __name__ == "__main__":
     # model_0.save("E:/Project/PIPELINETEST/Models/Model_full_size_images", "model_512x512.pkl")
 
     t.manual_observation(model_0, ds)
-
-    time.sleep(200)
+    # t.evaluate_model(model_0, ds, "test_data/evals")

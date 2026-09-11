@@ -33,7 +33,7 @@ def calculate_roc_values(inferred_probabilities: list, truth_labels: list):
     return roc_coords
 
 
-def draw_roc_curve(inferred_probabilities: list, truth_labels: list):
+def draw_roc_curve(inferred_probabilities: list, truth_labels: list, save_directory):
     x = []
     y = []
     coordinates = calculate_roc_values(inferred_probabilities, truth_labels)
@@ -42,11 +42,9 @@ def draw_roc_curve(inferred_probabilities: list, truth_labels: list):
         x.append(coord[0])
         y.append(coord[1])
 
-
-
     plt.plot(x, y)
     plt.fill_between(x,y, alpha=0.4)
-    plt.show()
+    plt.savefig(str(save_directory) + "/roc_curve.svg")
 
 
 def calculate_roc_auc(inferred_probabilities: list, truth_labels: list):
