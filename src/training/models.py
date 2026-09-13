@@ -263,6 +263,6 @@ class CNN(nn.Module):
 
 if __name__ == "__main__":
     m = CNN()
-    m.load("saved_models/Model0/model0.pkl")
+    m.load("E:\Project\Savefiles\Models\HPC_MIXED\model_mixed.pkl")
     m.calculate_batch_metrics()
-    m.draw_eval_graphs("saved_models/Model0/Metrics")
+    m.draw_eval_graphs("E:\Project\Savefiles\Models\HPC_MIXED\Metrics")

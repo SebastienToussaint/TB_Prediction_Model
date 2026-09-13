@@ -137,13 +137,14 @@ for file in images_directory.iterdir():
     if file.is_file():
         file_count += 1
 
-# Apply transforms to images
+# Get all paths
 image_paths = list(images_directory.iterdir())
 
 # Filter out non-pngs
 i = 0
 while i < len(image_paths):
     if not str(image_paths[i]).endswith(".png"):
+        print(f"Non png filepath found at {image_paths[i]}")
         image_paths.pop(i)
     else:
         i += 1
@@ -159,6 +160,7 @@ transform_affine_partial = partial(
 
 worker_count = os.cpu_count() or 1
 print(f"Using {worker_count} workers.")
+
 with ProcessPoolExecutor(max_workers=worker_count) as executor:
         executor.map(transform_affine_partial, image_paths )
 
