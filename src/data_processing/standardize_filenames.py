@@ -64,6 +64,9 @@ def rename_file_csv(file, csv_data, file_index, number_of_files):
     for row in csv_data:
         if row[0].endswith(current_file_name):
             row[0] = extract_filename_from_path(new_filename, 1)
+            return
+
+    print(f"No metadata found for {file.name}")
 
 
 # Argument structure:

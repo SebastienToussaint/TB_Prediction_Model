@@ -1,4 +1,5 @@
 import pickle
+import csv
 import torch.cuda
 from pympler.asizeof import asizeof
 from torch import nn
@@ -22,8 +23,38 @@ class CNN(nn.Module):
         self.test_truth_labels = []
         self.save_directory = ""
 
+        self.image_scores_training = {}
+        self.image_scores_testing = {}
+
     def forward(self, x):
         return self.layers(x)
+
+    def update_image_scores_training(self, correct_images, incorrect_images):
+        for image in correct_images:
+            if self.image_scores_training.get(image):
+                self.image_scores_training[image] += 1
+            else:
+                self.image_scores_training[image] = 1
+
+        for image in incorrect_images:
+            if self.image_scores_training.get(image):
+                self.image_scores_training[image] -= 1
+            else:
+                self.image_scores_training[image] = -1
+
+    def update_image_scores_testing(self, correct_images, incorrect_images):
+        for image in correct_images:
+            if self.image_scores_testing.get(image):
+                self.image_scores_testing[image] += 1
+            else:
+                self.image_scores_testing[image] = 1
+
+        for image in incorrect_images:
+            if self.image_scores_testing.get(image):
+                self.image_scores_testing[image] -= 1
+            else:
+                self.image_scores_testing[image] = -1
+
 
     def store_probabilities(self, train_prediction_probabilities, train_truth_labels,
                             test_prediction_probabilities=None, test_truth_labels=None):
@@ -73,10 +104,9 @@ class CNN(nn.Module):
 
         self.save_directory = save_directory + "/" + savefile_name
 
-        # TODO: Check this works as intended
         torch.save(self, save_directory + "/" + savefile_name)
 
-        print(f"Compressed datafile saved at {save_directory + "/" + savefile_name}")
+        print(f"Model saved at {save_directory + "/" + savefile_name}")
 
         return save_directory
 
@@ -209,7 +239,7 @@ class CNN(nn.Module):
 
         return training_evaluations, testing_evaluations
 
-    def draw_eval_graphs(self, save_directory:str|Path = "", window_size: int = None,
+    def draw_eval_graphs(self, save_directory:str|Path, window_size: int = None,
                          group_batches: int = 1):
 
         metrics = ["accuracy", "balanced_accuracy", "recall", "specificity", "precision", "dor", "f1",
@@ -221,11 +251,9 @@ class CNN(nn.Module):
         training_evaluations, testing_evaluations = self.calculate_batch_metrics(group_batches)
 
         if not window_size:
-            window = max(3, int(len(training_evaluations["accuracy"])/20))
+            window = max(1, int(len(training_evaluations["accuracy"])/20))
         else:
             window = window_size
-
-
 
         for metric in metrics:
             plt.plot(training_evaluations[metric], alpha=0.2, label = "Raw")
@@ -241,7 +269,14 @@ class CNN(nn.Module):
             plt.savefig(str(Path(str(save_directory)).resolve()) + "/training_" + metric + ".svg", format="svg")
             plt.close()
 
+
+
         if len(testing_evaluations["accuracy"]) > 0:
+            if not window_size:
+                window = max(1, int(len(testing_evaluations["accuracy"]) / 20))
+            else:
+                window = window_size
+
             for metric in metrics:
                 plt.plot(testing_evaluations[metric], alpha=0.2, label="Raw")
                 plt.plot(range(window - 1, len(testing_evaluations[metric])),
@@ -259,10 +294,37 @@ class CNN(nn.Module):
 
         print(f"Eval graphs successfully created and saved at {str(Path(str(save_directory)).resolve())}")
 
+    def output_image_scores(self, output_directory:str|Path):
+
+        verify_directory(output_directory, 2)
+
+        data = [["Training Data Path", "Score"]]
+
+        for key in self.image_scores_training:
+            data.append([key, self.image_scores_training[key]])
+
+        data.append(["", ""])
+        data.append(["Testing Data Path", "Score"])
+
+        for key in self.image_scores_testing:
+            data.append([key, self.image_scores_testing[key]])
+
+        with open(output_directory + "/image_scores.csv", "w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerows(data)
+
+        print(f"Image scores successfully saved to {str(Path(output_directory).resolve())}")
+
+
+
 
 
 if __name__ == "__main__":
     m = CNN()
-    m.load("E:\Project\Savefiles\Models\HPC_MIXED\model_mixed.pkl")
-    m.calculate_batch_metrics()
-    m.draw_eval_graphs("E:\Project\Savefiles\Models\HPC_MIXED\Metrics")
+    m.load("E:\Project\TESTING\Models\TrackingModel\model_tracker.pkl")
+    m.draw_eval_graphs("E:\Project\TESTING\Models\TrackingModel/Metrics")
+    m.output_image_scores("E:\Project\TESTING\Models\TrackingModel/")
+
+    # m.load("E:\Project\Savefiles\Models\HPC_MIXED\model_mixed.pkl")
+    # m.calculate_batch_metrics()
+    # m.draw_eval_graphs("E:\Project\Savefiles\Models\HPC_MIXED\Metrics")

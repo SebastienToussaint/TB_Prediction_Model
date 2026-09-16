@@ -9,34 +9,38 @@ import csv
 from utilities.directory_handling import verify_directory
 from utilities.string_manipulation import extract_filename_from_path
 
-def write_custom_csv(csv_file,  filepath, label, study_name):
+def write_custom_csv(csv_file,  filepath, label, study_name, origin_country):
     """
     Writes the given parameters into the provided csv_file in the standard metadata format of this project
     """
     data_writer = csv.writer(csv_file)
 
     corresponding_image_name = extract_filename_from_path(filepath, 1)
-    patient_sex = None
-    patient_age = None
+    patient_sex = "unknown"
+    patient_age = "unknown"
     tb_status = label
     additional_information = None
+    bmi = "unknown"
+    country = origin_country
 
-    data_line = [corresponding_image_name, patient_sex, patient_age, tb_status,
+    data_line = [corresponding_image_name, patient_sex, patient_age, bmi, country, tb_status,
                  additional_information, corresponding_image_name, study_name]
 
     data_writer.writerow(data_line)
 
 # Argument Management
-if len(sys.argv) != 5:
+if len(sys.argv) != 6:
     print("ERROR: Incorrect arguments provided\n"
           "Usage: make metadata_to_csv ARGS='<metadata_directory> <csv_savefile_path> <label (TB, Healthy, Other)> "
-          "<study_name>")
+          "<study_name> <patient_country_of_origin>")
     quit()
 
 target_directory = Path(sys.argv[1])
 save_directory = Path(sys.argv[2])
 patient_label = sys.argv[3]
 study_of_origin = sys.argv[4]
+patient_country = sys.argv[5]
+
 
 verify_directory(target_directory, 0)
 
@@ -56,12 +60,12 @@ metadata_file_exists = os.path.exists(csv_path) and (os.path.getsize(csv_path) >
 with open(csv_path, "a", newline="", encoding="utf-8") as csv_savefile:
     if not metadata_file_exists:
         # Write header
-        csv_writer = csv.DictWriter(csv_savefile, ["Associated CXR", "Sex", "Age", "Status",
+        csv_writer = csv.DictWriter(csv_savefile, ["Associated CXR", "Sex", "Age", "BMI", "Country", "Status",
                                                    "Notes", "Original CXR Name", "Study of Origin"])
         csv_writer.writeheader()
 
     for file in target_directory.iterdir():
         print(f"Writing {file.resolve()}...")
-        write_custom_csv(csv_savefile, file.resolve(), patient_label, study_of_origin)
+        write_custom_csv(csv_savefile, file.resolve(), patient_label, study_of_origin, patient_country)
 
 print("Done.")

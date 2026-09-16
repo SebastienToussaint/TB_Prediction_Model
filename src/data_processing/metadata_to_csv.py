@@ -31,7 +31,7 @@ def write_csv_montgomery(csv_file,  metadata_filepath, study_name):
             tb_status = "TB"
             additional_information = tb_status_line
 
-    data_line = [corresponding_image_name, patient_sex, patient_age, tb_status,
+    data_line = [corresponding_image_name, patient_sex, patient_age, "unknown", "USA", tb_status,
                  additional_information, corresponding_image_name,  study_name]
 
     data_writer.writerow(data_line)
@@ -65,7 +65,7 @@ def write_csv_shenzhen(csv_file,  metadata_filepath, study_name):
             tb_status = "TB"
             additional_information = tb_status_line
 
-    data_line = [corresponding_image_name, patient_sex, patient_age, tb_status,
+    data_line = [corresponding_image_name, patient_sex, patient_age, "unknown", "China", tb_status,
                  additional_information, corresponding_image_name, study_name]
 
     data_writer.writerow(data_line)
@@ -100,8 +100,8 @@ else:
 
 with open(csv_path, "w", newline="", encoding="utf-8") as csv_savefile:
     # Write header
-    w = csv.DictWriter(csv_savefile, ["Associated CXR", "Sex", "Age", "Status", "Notes",
-                                      "Original CXR Name", "Study of Origin"])
+    w = csv.DictWriter(csv_savefile, ["Associated CXR", "Sex", "Age", "BMI", "Country", "Status",
+                                                   "Notes", "Original CXR Name", "Study of Origin"])
     w.writeheader()
 
     for file in target_directory.iterdir():

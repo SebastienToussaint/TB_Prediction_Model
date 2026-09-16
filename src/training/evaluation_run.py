@@ -1,4 +1,3 @@
-from pympler.asizeof import asizeof, asized
 import torch
 from torch import nn
 from training import data_handling
@@ -8,8 +7,6 @@ from evaluation_metrics import roc_curve
 from utilities.directory_handling import verify_directory
 from pathlib import Path
 import csv
-import models
-from data_handling import DataStructure, CustomDataset # Import CustomDataset to prevent error with pickle
 from utilities.array_handling import flatten_list
 
 

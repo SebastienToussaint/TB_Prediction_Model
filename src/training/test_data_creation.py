@@ -27,7 +27,7 @@ class CustomDataset(Dataset):
         return self.images[index].float(), self.labels[index]
 
 
-def fashion_mnist_to_images(self, fashionMNIST_data_path, save_directory, resize_scale: list = None,):
+def fashion_mnist_to_images(fashionMNIST_data_path, save_directory, resize_scale: list = None,):
     """
     Creates a png image dataset of shoes and shirts from the fashionmnist dataset.
     Saves images to the save directory and adds labels to the end of the filenames.
@@ -39,7 +39,7 @@ def fashion_mnist_to_images(self, fashionMNIST_data_path, save_directory, resize
     print("Creating and saving images")
     verify_directory(save_directory, 1)
     idx = 0
-    data = self.load_test_data(1, 100, fashionMNIST_data_path)[0]
+    data = load_test_data(1, 100, fashionMNIST_data_path)[0]
     for (images, labels) in data:
         for i, image in enumerate(images):
             save_name = f"{save_directory}/{idx}_fashion_{labels[i]}.png"
@@ -54,7 +54,7 @@ def fashion_mnist_to_images(self, fashionMNIST_data_path, save_directory, resize
             idx += 1
 
 
-def load_test_data(self, partitions: int, batch_size, fashionMNIST_data_path):
+def load_test_data(partitions: int, batch_size, fashionMNIST_data_path):
     """
     Returns randomly partitioned data in the form of a list of dataloaders of a filtered 2 class version of the
     fashionMNIST dataset.
@@ -80,8 +80,7 @@ def load_test_data(self, partitions: int, batch_size, fashionMNIST_data_path):
         elif item[1] == 9:
             filtered_data.append((item[0], 1))
 
-    partitioned_data = self._transform_raw_data_to_dataloader(filtered_data, partitions, batch_size)
-    self.dataloaders = partitioned_data
+    partitioned_data = _transform_raw_data_to_dataloader(filtered_data, partitions, batch_size)
     return partitioned_data
 
 
@@ -115,3 +114,7 @@ def _transform_raw_data_to_dataloader(raw_data: list, partitions: int, batch_siz
         partitioned_data[i] = DataLoader(CustomDataset(partitioned_data[i]), batch_size, True)
 
     return partitioned_data
+
+
+if __name__ == "__main__":
+    fashion_mnist_to_images("E:\Project\TESTING\Fashion", "E:\Project\TESTING\Fashion\images_raw")

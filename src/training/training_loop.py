@@ -4,6 +4,7 @@ from torch import nn
 from training import data_handling
 from training.evaluation_metrics import accuracy, mcc, f1_score, core_metrics
 from utilities.array_handling import flatten_list
+from training.evaluation_metrics import metric_counts
 
 def log_metrics(epoch: int, metrics_to_log, train_loss, train_probs, train_labels,
                 test_loss = None, test_probs = None, test_labels = None):
@@ -56,8 +57,27 @@ def log_metrics(epoch: int, metrics_to_log, train_loss, train_probs, train_label
     print(log_string)
 
 
+def update_model_image_scores(model, inferred_probs, truth_labels, image_paths, training: bool):
+    correct_indices = []
+    correct_indices.extend(metric_counts.get_true_positives(inferred_probs, truth_labels)[1])
+    correct_indices.extend(metric_counts.get_true_negatives(inferred_probs, truth_labels)[1])
+
+    correct_paths = []
+    incorrect_paths = []
+    for i, path in enumerate(image_paths):
+        if i in correct_indices:
+            correct_paths.append(path)
+        else:
+            incorrect_paths.append(path)
+
+    if training:
+        model.update_image_scores_training(correct_paths, incorrect_paths)
+    else:
+        model.update_image_scores_testing(correct_paths, incorrect_paths)
+
+
 def run_training_loop(model: nn.Module, data_structure: data_handling.DataStructure, number_of_epochs: int, loss_fn,
-                      optimizer, target_device: str = "cpu", reserve_evaluation_partition = False,
+                      optimizer, target_device: str = "cpu", num_evaluation_partitions = 0,
                       save_probabilities_to_model = True, metrics_to_log:list|None = None):
 
     # Log training info
@@ -67,8 +87,8 @@ def run_training_loop(model: nn.Module, data_structure: data_handling.DataStruct
           f" -Device: {target_device}\n"
           f" -Loss function: {loss_fn}\n"
           f" -Optimizer: {optimizer.__class__.__name__}\n"
-          f" -Number of Partitions: {data_structure.get_num_partitions()}"
-          f" -Reserve partition for evaluation: {reserve_evaluation_partition}\n"
+          f" -Number of Partitions: {data_structure.get_num_partitions()}\n"
+          f" -Number of partitions reserved for evaluation: {num_evaluation_partitions}\n"
           f" -Save inferred probabilities to model: {save_probabilities_to_model}\n")
 
 
@@ -76,8 +96,8 @@ def run_training_loop(model: nn.Module, data_structure: data_handling.DataStruct
 
     # Get and verify number of partitions
     num_training_partitions = data_structure.get_num_partitions()
-    if reserve_evaluation_partition:
-        num_training_partitions -= 1
+    if num_evaluation_partitions > 0:
+        num_training_partitions -= num_evaluation_partitions
     if num_training_partitions <= 0:
         print(f"Error while training, not enough partitions ({num_training_partitions}) to reserve one for evaluation.\n"
               f"Please create more partitions or set reserve_evaluation_partition to False")
@@ -95,16 +115,14 @@ def run_training_loop(model: nn.Module, data_structure: data_handling.DataStruct
         train_batches_processed = 0
         training_probs = [] # Stores all the probabilities from the training run in this epoch
         training_labels = [] # Truth labels for training run
+        training_filepaths = []
 
         for i in range(num_training_partitions):
 
             # Get the next chunk of data
             train_dataloader = data_structure.get_next_dataloader()
 
-
-            for batch, (images, labels) in enumerate(train_dataloader):
-
-                print(images.dtype)
+            for batch, (images, labels, filepaths) in enumerate(train_dataloader):
 
                 images, labels = images.to(target_device), labels.to(target_device)
 
@@ -116,6 +134,7 @@ def run_training_loop(model: nn.Module, data_structure: data_handling.DataStruct
                 # Save inferred probabilities and truth labels
                 training_probs.append(inferred_prediction_values.detach().cpu().tolist())
                 training_labels.append(labels.detach().cpu().tolist())
+                training_filepaths.append(filepaths)
 
                 # Perform standard training loop operations
                 batch_loss = loss_fn(inferred_logits, labels.float())
@@ -135,29 +154,32 @@ def run_training_loop(model: nn.Module, data_structure: data_handling.DataStruct
         test_batches_processed = 0
         testing_probs = []
         testing_labels = []
+        testing_filepaths = []
 
-        if reserve_evaluation_partition:
+        if num_evaluation_partitions > 0:
             total_test_loss = 0
             model.eval()
 
-            test_dataloader = data_structure.get_next_dataloader()
+            for i in range(num_evaluation_partitions):
+                test_dataloader = data_structure.get_next_dataloader()
 
-            # Run evaluation on model
-            with torch.inference_mode():
-                for images, labels in test_dataloader:
-                    images, labels = images.to(target_device), labels.to(target_device)
+                # Run evaluation on model
+                with torch.inference_mode():
+                    for images, labels, filepaths in test_dataloader:
+                        images, labels = images.to(target_device), labels.to(target_device)
 
-                    # Infer labels
-                    images = images.unsqueeze(1) # TODO: Need function to check if dims are correct (for model type) and update them on the fly
-                    inferred_logits = model(images).squeeze()
-                    inferred_prediction_values = torch.sigmoid(inferred_logits) # Round these to get labels
+                        # Infer labels
+                        images = images.unsqueeze(1) # TODO: Need function to check if dims are correct (for model type) and update them on the fly
+                        inferred_logits = model(images).squeeze()
+                        inferred_prediction_values = torch.sigmoid(inferred_logits) # Round these to get labels
 
-                    # Save inferred probabilities and truth labels
-                    testing_probs.append(inferred_prediction_values.detach().cpu().tolist())
-                    testing_labels.append(labels.detach().cpu().tolist())
+                        # Save inferred probabilities and truth labels
+                        testing_probs.append(inferred_prediction_values.detach().cpu().tolist())
+                        testing_labels.append(labels.detach().cpu().tolist())
+                        testing_filepaths.append(filepaths)
 
-                    total_test_loss += loss_fn(inferred_logits, labels.float()).item()
-                    test_batches_processed += 1
+                        total_test_loss += loss_fn(inferred_logits, labels.float()).item()
+                        test_batches_processed += 1
 
         # =========================================================================================
 
@@ -168,9 +190,17 @@ def run_training_loop(model: nn.Module, data_structure: data_handling.DataStruct
 
         # Save inferred probabilities and labels to model
         if save_probabilities_to_model:
-            if reserve_evaluation_partition:
+            if num_evaluation_partitions > 0:
+                update_model_image_scores(model, flatten_list(training_probs), flatten_list(training_labels),
+                                          flatten_list(training_filepaths), True)
+                update_model_image_scores(model, flatten_list(testing_probs), flatten_list(testing_labels),
+                                          flatten_list(testing_filepaths), False)
+
                 model.store_probabilities(training_probs, training_labels, testing_probs, testing_labels)
             else:
+                update_model_image_scores(model, flatten_list(training_probs), flatten_list(training_labels),
+                                          flatten_list(training_filepaths), True)
+
                 model.store_probabilities(training_probs, training_labels)
 
 

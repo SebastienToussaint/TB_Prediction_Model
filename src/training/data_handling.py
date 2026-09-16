@@ -27,14 +27,17 @@ class CustomDataset(Dataset):
             self.labels.append(datapoint[1])
             self.filepaths.append(datapoint[2])
 
-    def get_filepaths(self):
+    def get_filepath(self, index):
+        return self.filepaths[index]
+
+    def get_all_filepaths(self, index):
         return self.filepaths
 
     def __len__(self):
         return len(self.images)
 
     def __getitem__(self, index):
-        return self.images[index].float(), self.labels[index]
+        return self.images[index].float(), self.labels[index], self.filepaths[index]
 
 
 class DataStructure:
@@ -307,7 +310,7 @@ class DataStructure:
                 image_array = self.encode_image(path)
                 image_label = self.get_image_label_from_name(str(path))
 
-                raw_partition_data.append((image_array, torch.tensor(int(image_label)), path))
+                raw_partition_data.append((image_array, torch.tensor(int(image_label)), str(path)))
 
             dataloader = DataLoader(CustomDataset(raw_partition_data), batch_size, True)
 
@@ -397,7 +400,7 @@ class DataStructure:
 
         for i in range(num_partitions):
             partition = self.get_next_dataloader()
-            filepaths.extend(partition.dataset.get_filepaths())
+            filepaths.extend(partition.dataset.get_all_filepaths())
             for images, labels in partition:
                 if len(images) > batch_size:
                     batch_size = len(images)
@@ -416,9 +419,30 @@ class DataStructure:
 if __name__ == "__main__":
     d = DataStructure()
 
-    d.create_dataset([Path("test_data/fashion_images/")],
-                     5, 52, "test_data/testloading")
+    d.create_dataset([Path("E:\Project\TESTING\Fashion\subset_4000_raw")],
+                     10, 20, "E:\Project\TESTING\Data\Dataloaders/fashion_dataloaders")
 
-    d.set_native_datapath("test_data/testloading")
+    # d.set_native_datapath("test_data/testloading")
 
-    d.shuffle_data()
+    # d.shuffle_data()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -18,7 +18,7 @@ class Trainer:
 
     def train(self, number_of_epochs, model: torch.nn.Module|None=None, data_structure:DataStructure|None=None,
               loss_function:str="BCE", optimizer:str="SGD", learning_rate:float|int=0.001, target_device:str="Any",
-              reserve_evaluation_partition=False, save_metrics=True, metrics_to_log=None):
+              number_of_evaluation_partitions:int =0, save_metrics=True, metrics_to_log=None):
 
         # Parameter Management
         if not self.model and not model:
@@ -50,7 +50,7 @@ class Trainer:
         optim = self._get_optimizer(optimizer, model, learning_rate)
         device = self._get_target_device(target_device)
 
-        run_training_loop(model, data_structure, number_of_epochs, loss_fn, optim, device, reserve_evaluation_partition,
+        run_training_loop(model, data_structure, number_of_epochs, loss_fn, optim, device, number_of_evaluation_partitions,
                           save_metrics, metrics_to_log)
 
     @staticmethod
@@ -97,7 +97,7 @@ class Trainer:
             case "cuda":
                 return "cuda"
             case "gpu":
-                return "gpu"
+                return "cuda"
             case _:
                 print(f"Error in trainer.train() {name} is not a valid target device.\n"
                       f"Options: Any (will use cuda/gpu if available, else cpu), cpu, cuda, gpu (same as cuda).")
@@ -121,7 +121,6 @@ class Trainer:
 
         num_partitions = ds.get_num_partitions()
 
-
         model.eval()
 
         with torch.inference_mode():
@@ -132,23 +131,28 @@ class Trainer:
                 for batch in dataloader:
                     batch_images = batch[0]
                     batch_labels = batch[1]
+                    batch_filepaths = batch[2]
 
                     batch_images = batch_images.to("cpu")
                     batch_labels = batch_labels.to("cpu")
 
                     batch_images = batch_images.unsqueeze(1)
+                    print(batch_images.shape)
                     predicted_labels = torch.round(torch.sigmoid(model(batch_images)))
 
 
-                    for i in range(len(batch_images)):
+                    for j in range(len(batch_images)):
 
-                        img = batch_images[i].squeeze()
+                        img = batch_images[j].squeeze()
 
                         print(img.dtype)
-                        label = batch_labels[i]
+                        label = batch_labels[j]
                         plt.imshow(img, cmap="gray")
-                        plt.title(f"Predicted: {predicted_labels[i].item()} Real: {label}")
+                        plt.title(f"Predicted: {predicted_labels[j].item()} Real: {label}\n"
+                                  f"Filepath: {batch_filepaths[j]}")
                         plt.show()
+                        plt.close()
+
 
     @staticmethod
     def evaluate_model(model, data_structure: DataStructure, save_directory):
@@ -159,18 +163,24 @@ class Trainer:
 
 if __name__ == "__main__":
     model_0 = models.CNN()
-    # model_0.create_standard(1, 80, 1)
-    model_0.load("saved_models/Model0/model0.pkl")
+    # model_0.create_standard(1, 48, 1)
+    model_0.load("E:\Project\TESTING\Models\TrackingModel\model_tracker.pkl")
     ds = DataStructure()
     ds.reset_dataloader_index()
-    ds.set_native_datapath("test_data/eval_dataloaders")
+    ds.set_native_datapath("E:\Project\TESTING\Data\Dataloaders/fashion_dataloaders")
     # ds.set_native_datapath("E:/Project/data/tests/dataloaders/")
     t = Trainer()
 
-    # t.train(200, model_0, ds, "BCE", "Adam", 0.001, "ANY", True,
-            # metrics_to_log=["Acc", "Bacc", "MCC"])
+    # t.train(1, model_0, ds, "BCE", "Adam", 0.001, "ANY", 1,
+    #         metrics_to_log=["Acc", "Bacc", "MCC"])
 
-    # model_0.save("E:/Project/PIPELINETEST/Models/Model_full_size_images", "model_512x512.pkl")
+    # print(model_0.image_scores_training)
+    # print(model_0.image_scores_testing)
+
+    # model_0.draw_eval_graphs("E:\Project\TESTING\Models\TrackingModel/Metrics")
+    # model_0.output_image_scores("E:\Project\TESTING\Models\TrackingModel/")
+
+    # model_0.save("E:\Project\TESTING\Models\TrackingModel", "model_tracker.pkl")
 
     t.manual_observation(model_0, ds)
     # t.evaluate_model(model_0, ds, "test_data/evals")
