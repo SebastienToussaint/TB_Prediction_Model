@@ -1,5 +1,5 @@
-from models import CNN
-from optimization.data_handling import DataStructure, CustomDataset
+from objects.models import CNN
+from objects.data_handling import DataStructure
 import torch
 
 def run_cross_validation(model_class, data_structure, number_of_epochs: int, loss_fn, optimizer, target_device: str = "cpu"):

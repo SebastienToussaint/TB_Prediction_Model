@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from training import data_handling
+from  shared_objects import data_handling
 from evaluation_metrics import accuracy, core_metrics, diagnostic_odds_ratio, f1_score, fowlkes_mallows_index
 from evaluation_metrics import informedness, jaccard_index, markedness, mcc, prevalence_threshold
 from evaluation_metrics import roc_curve

@@ -1,7 +1,7 @@
 from pympler.asizeof import asizeof, asized
 import torch
 from torch import nn
-from training import data_handling
+from shared_objects import data_handling
 from evaluation_metrics import accuracy, mcc, f1_score, core_metrics
 from utilities.array_handling import flatten_list
 from evaluation_metrics import metric_counts

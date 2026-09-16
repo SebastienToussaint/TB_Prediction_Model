@@ -2,7 +2,6 @@ import os.path
 import random
 import shutil
 from pathlib import Path
-
 import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset
@@ -420,7 +419,7 @@ if __name__ == "__main__":
     d = DataStructure()
 
     d.create_dataset([Path("E:\Project\TESTING\Fashion\subset_100_large")],
-                     1, 20, "E:\Project\TESTING\Data\Dataloaders/fashion_dataloaders/testing")
+                     1, 20, "E:\Project\TESTING\Data\Dataloaders/fashion_dataloaders")
 
     # d.set_native_datapath("test_data/testloading")
 

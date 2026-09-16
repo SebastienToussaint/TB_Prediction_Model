@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 from utilities.directory_handling import verify_directory
-from training.data_handling import DataStructure
+from shared_objects.data_handling import DataStructure
 
 def _process_config(path_to_file):
     path_to_file = str(Path(str(path_to_file)).resolve())

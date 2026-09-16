@@ -3,9 +3,9 @@ import torch
 import matplotlib.pyplot as plt
 import pickle
 from utilities.directory_handling import verify_directory
-from training.data_handling import DataStructure, CustomDataset # Import CustomDataset to prevent error with pickle
+from shared_objects.data_handling import DataStructure, CustomDataset # Import CustomDataset to prevent error with pickle
 from training.training_loop import run_training_loop
-import models
+from shared_objects import models
 from pathlib import Path
 from training.evaluation_run import run_evaluation
 
@@ -163,10 +163,10 @@ class Trainer:
 if __name__ == "__main__":
     model_0 = models.CNN()
     # model_0.create_standard(1, 48, 1)
-    model_0.load("E:\Project\TESTING\Models\TrackingModel\model_tracker.pkl")
+    model_0.load("E:/Project/TESTING/Models/TrackingModel/model_tracker.pkl")
     ds = DataStructure()
     ds.reset_dataloader_index()
-    ds.set_native_datapath("E:\Project\TESTING\Data\Dataloaders/fashion_dataloaders")
+    ds.set_native_datapath("E:/Project/TESTING/Data/Dataloaders/fashion_dataloaders")
     # ds.set_native_datapath("E:/Project/data/tests/dataloaders/")
     t = Trainer()
 

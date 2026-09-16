@@ -3,9 +3,8 @@ from pathlib import Path
 import numpy as np
 from utilities.directory_handling import verify_directory
 import cv2
-from matplotlib import pyplot as plt
-from image_processing.adjust_size import resize_image
-from image_processing.adjust_contrast import normalize_range, transform_contrast_sigmoid
+from data_processing.image_processing.adjust_size import resize_image
+from data_processing.image_processing.adjust_contrast import normalize_range
 from concurrent.futures import ProcessPoolExecutor
 import os
 from functools import partial
