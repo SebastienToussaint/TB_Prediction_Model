@@ -1,14 +1,13 @@
 import time
-
 import torch
 import matplotlib.pyplot as plt
 import pickle
 from utilities.directory_handling import verify_directory
-from data_handling import DataStructure, CustomDataset # Import CustomDataset to prevent error with pickle
-from training_loop import run_training_loop
+from training.data_handling import DataStructure, CustomDataset # Import CustomDataset to prevent error with pickle
+from training.training_loop import run_training_loop
 import models
 from pathlib import Path
-from evaluation_run import run_evaluation
+from training.evaluation_run import run_evaluation
 
 
 class Trainer:

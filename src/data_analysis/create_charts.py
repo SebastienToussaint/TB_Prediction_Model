@@ -5,10 +5,10 @@ from pathlib import Path
 import csv
 
 # Chart imports
-import age_distribution
-import age_with_status_distribution
-import health_distribution
-import sex_distribution
+from data_analysis import sex_distribution
+from data_analysis import age_with_status_distribution
+from data_analysis import health_distribution
+from data_analysis import age_distribution
 
 # Argument management and csv path retrieval
 csv_paths = []

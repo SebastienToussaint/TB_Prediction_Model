@@ -4,7 +4,6 @@ import time
 from concurrent.futures import ProcessPoolExecutor
 import os
 from functools import partial
-
 from utilities.directory_handling import verify_directory
 from pathlib import Path
 import cv2

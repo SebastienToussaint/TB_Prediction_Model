@@ -2,9 +2,9 @@ from pympler.asizeof import asizeof, asized
 import torch
 from torch import nn
 from training import data_handling
-from training.evaluation_metrics import accuracy, mcc, f1_score, core_metrics
+from evaluation_metrics import accuracy, mcc, f1_score, core_metrics
 from utilities.array_handling import flatten_list
-from training.evaluation_metrics import metric_counts
+from evaluation_metrics import metric_counts
 
 def log_metrics(epoch: int, metrics_to_log, train_loss, train_probs, train_labels,
                 test_loss = None, test_probs = None, test_labels = None):

@@ -4,8 +4,8 @@ import numpy as np
 from utilities.directory_handling import verify_directory
 import cv2
 from matplotlib import pyplot as plt
-from adjust_size import resize_image
-from adjust_contrast import normalize_range, transform_contrast_sigmoid
+from image_processing.adjust_size import resize_image
+from image_processing.adjust_contrast import normalize_range, transform_contrast_sigmoid
 from concurrent.futures import ProcessPoolExecutor
 import os
 from functools import partial
