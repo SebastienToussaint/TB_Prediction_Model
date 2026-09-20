@@ -1,6 +1,7 @@
 import os.path
 import random
 import shutil
+import time
 from pathlib import Path
 import numpy as np
 import torch
@@ -9,6 +10,8 @@ from utilities.directory_handling import verify_directory
 from math import ceil, floor
 import cv2
 import pickle
+from shared_objects import tta
+import matplotlib.pyplot as plt
 
 
 class CustomDataset(Dataset):
@@ -186,14 +189,11 @@ class DataStructure:
     @staticmethod
     def _get_split_values(negative_paths: list, positive_paths: list, number_of_negative_images, number_of_positive_images, negative_split_percentage):
 
-
         if str(number_of_negative_images).upper() == "ALL":
             number_of_negative_images = len(negative_paths)
 
         if str(number_of_positive_images).upper() == "ALL":
             number_of_positive_images = len(positive_paths)
-
-
 
         label_counts = [len(negative_paths), len(positive_paths)]
 
@@ -243,7 +243,6 @@ class DataStructure:
         del selected_negative_images
         combined_images += selected_positive_images
         del selected_positive_images
-
 
         return combined_images
 
@@ -350,7 +349,6 @@ class DataStructure:
                   f" object")
             quit()
 
-
         return dataloader
 
     def reset_dataloader_index(self):
@@ -387,6 +385,7 @@ class DataStructure:
         verify_directory(datapath, 0)
 
         self.native_data_path = datapath
+        self.reset_dataloader_index()
 
     def shuffle_data(self):
         print("Shuffling data...")
@@ -404,8 +403,6 @@ class DataStructure:
                 if len(images) > batch_size:
                     batch_size = len(images)
 
-
-
         # Create shuffled partitions from sampled data
         partitioned_data = self._partition_selected_image_paths(num_partitions, filepaths)
 
@@ -414,34 +411,55 @@ class DataStructure:
 
         del partitioned_data
 
+    @staticmethod
+    def augment_data(dataloader, x_shift_range: list, y_shift_range: list, rotation_range: list):
+        print("Augmenting dataloader...")
+
+        data = []
+        batch_size = 0
+
+        for batch in dataloader:
+            if len(batch[0]) > batch_size:
+                batch_size = len(batch[0])
+
+            for i in range(len(batch[0])):
+                data.append([batch[0][i], batch[1][i], batch[2][i]])
+
+        del dataloader
+
+        data.extend(tta.augment_data_from_dataloader(data, x_shift_range, y_shift_range, rotation_range))
+
+        dataloader = DataLoader(CustomDataset(data), batch_size, True)
+
+        return dataloader
+
+    @staticmethod
+    def observe_dataloader( dataloader):
+        for batch in dataloader:
+            batch_images = batch[0]
+            batch_labels = batch[1]
+            batch_filepaths = batch[2]
+
+            batch_images = batch_images.unsqueeze(1)
+
+            for j in range(len(batch_images)):
+                img = batch_images[j].squeeze()
+                label = batch_labels[j]
+                plt.imshow(img, cmap="gray")
+                plt.title(f"Real: {label}\n"
+                          f"Filepath: {batch_filepaths[j]}")
+                plt.show()
+                plt.close()
+
 
 if __name__ == "__main__":
     d = DataStructure()
 
-    d.create_dataset([Path("E:\Project\TESTING\Fashion\subset_100_large")],
-                     1, 20, "E:\Project\TESTING\Data\Dataloaders/fashion_dataloaders")
+    # d.create_dataset([Path("E:\Project\TESTING\Data\Images\Fullsize")],
+    #                  6, 30, "E:\Project\TESTING\Data\Dataloaders\FullSize")
 
-    # d.set_native_datapath("test_data/testloading")
+    d.set_native_datapath("E:\Project\TESTING\Data\Dataloaders\FullSize")
 
-    # d.shuffle_data()
+    dl = d.get_next_dataloader()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    dl = d.augment_data(dl, [-50, 50], [-50, 50], [-15, 15])

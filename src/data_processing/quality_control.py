@@ -6,6 +6,8 @@ from pathlib import Path
 import sys
 import hashlib
 import cv2
+import numpy as np
+
 from utilities.string_manipulation import extract_filename_from_path
 
 
@@ -52,9 +54,35 @@ def verify_file_extension(file, expected_extension, bad_extensions_list):
 
     return True
 
+def verify_dtype(image_path, bad_dtype_list):
+    image = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
+
+    if image is None:
+        print(f"Could not load {image_path}")
+        return False
+
+    if image.dtype != np.uint16:
+        bad_dtype_list.append(image_path)
+        return False
+
+    return True
+
+def verify_shape(image_path, bad_shape_list):
+    image = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
+
+    if image is None:
+        print(f"Could not load {image_path}")
+        return False
+
+    if len(image.shape) != 2:
+        bad_shape_list.append(image_path)
+        return False
+
+    return True
+
 
 def traverse_directory(directory_path, hash_dictionary, expected_extension, expected_image_dimensions,
-                       bad_extensions_list, bad_dimensions_list):
+                       bad_extensions_list, bad_dimensions_list, bad_dtype_files, bad_shape_files):
     """
     Recursively traverses a directory, performing quality control checks on any non-directory files encountered
     Checks include:
@@ -67,7 +95,7 @@ def traverse_directory(directory_path, hash_dictionary, expected_extension, expe
     for file in directory_path.iterdir():
         if file.is_dir():
             traverse_directory(file, hash_dictionary, expected_extension, expected_image_dimensions,
-                               bad_extensions_list, bad_dimensions_list)
+                               bad_extensions_list, bad_dimensions_list, bad_dtype_files, bad_shape_files)
         else:
             print(f"Verifying {file.resolve()}...")
             if verify_file_extension(file, expected_extension, bad_extensions_list):
@@ -75,13 +103,17 @@ def traverse_directory(directory_path, hash_dictionary, expected_extension, expe
                 if expected_image_dimensions[0] > 0:
                     verify_image_dimensions(file, expected_image_dimensions, bad_dimensions_list)
 
+                verify_dtype(file, bad_dtype_files)
+                verify_shape(file, bad_shape_files)
+
+
 
 def find_duplicates(dictionary):
     """
     Finds keys (in this case image hashes) that have multiple items and prints out the file path of duplicate images
     """
     duplicates_found = False
-    print("\n\nFinding duplicates...\n")
+    print("\n\nFinding duplicates...")
     for key in dictionary:
         if len(dictionary[key]) > 1:
             duplicates_found = True
@@ -169,11 +201,13 @@ else:
 image_hashes = {}
 incorrect_extension_files = []
 incorrect_dimension_files = []
+incorrect_dtype_files = []
+incorrect_shape_files = []
 
 # Perform quality control on target directory
 traverse_directory(target_directory, image_hashes, expected_file_extension,
                    (expected_image_width, expected_image_height),
-                   incorrect_extension_files, incorrect_dimension_files)
+                   incorrect_extension_files, incorrect_dimension_files, incorrect_dtype_files, incorrect_shape_files)
 
 find_duplicates(image_hashes)
 
@@ -185,7 +219,7 @@ if len(incorrect_extension_files) != 0:
 else:
     print(f"All files have correct extension ({expected_file_extension})")
 
-# Display filepaths of images with incorrect image sizes TODO: Give option to resize incorrect images?
+# Display filepaths of images with incorrect image sizes
 if expected_image_width > 0:
     if len(incorrect_dimension_files) != 0:
         print(f"\nImages with incorrect dimensions ({expected_image_width}x{expected_image_height} expected):")
@@ -195,3 +229,18 @@ if expected_image_width > 0:
         print(f"All images have expected dimensions ({expected_image_width}x{expected_image_height})")
 else:
     print("Did not check for image sizes")
+
+if incorrect_dtype_files:
+    print("\nFiles that aren't uint16 dtype:")
+    for img in incorrect_dtype_files:
+        print(f"  {img.resolve()}")
+else:
+    print("All images are of correct dtype (uint16)")
+
+if incorrect_shape_files:
+    print("\nFiles that aren't grayscale:")
+    for img in incorrect_shape_files:
+        print(f"  {img.resolve()}")
+else:
+    print("All images are of correct shape")
+

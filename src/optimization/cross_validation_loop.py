@@ -1,5 +1,5 @@
-from objects.models import CNN
-from objects.data_handling import DataStructure
+from shared_objects.models import CNN
+from shared_objects.data_handling import DataStructure
 import torch
 
 def run_cross_validation(model_class, data_structure, number_of_epochs: int, loss_fn, optimizer, target_device: str = "cpu"):

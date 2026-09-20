@@ -11,31 +11,37 @@ from functools import partial
 
 
 def extract_and_save_image(filepath, save_directory):
+    """
+    Extracts the image from the dicom file at the given path.
+    Image gets standardized to uint16 and saved to the save directory,
+    keeping its original name
+    """
     dcm_file = pydicom.dcmread(filepath)
 
     image = dcm_file.pixel_array.astype(np.uint16)
 
     if dcm_file.get("BitsStored") and dcm_file.get("PhotometricInterpretation"):
 
-        # Standardize photometric type and pixel range
+        # Get the maximum possible value in the pixel array
         max_value = (1 << dcm_file.BitsStored) - 1
 
         # Invert pixel state if needed
         if dcm_file.PhotometricInterpretation.upper() == "MONOCHROME1":
             image = max_value - image
 
+        # Standardize to uint16 range
         image = image.astype(np.float32)
-
         image = image / max_value * 65535.0
 
     else:
-        # Attempt to standardize pixel range by using max found pixel value
+        # Attempt to standardize pixel range to uint16 by using max found pixel value
         print(f"Could not find BitsStored or PhotometricInterpretation parameter for dcm file {filepath}\n"
               f"Using default pixel array with scaling based on maximum brightness in pixel array")
 
         image = image.astype(np.float32)
         image = image / image.max() * 65535.0
 
+    # Convert from float32 to uint16
     image = np.round(image).astype(np.uint16)
 
     # Save the image
@@ -44,11 +50,11 @@ def extract_and_save_image(filepath, save_directory):
 
     # Quality control check
     saved_image = cv2.imread(save_path, cv2.IMREAD_UNCHANGED)
-
     assert saved_image.dtype == np.uint16
     assert np.array_equal(saved_image, image)
 
 if __name__ == "__main__":
+    # Argument management
     target_directory = Path(sys.argv[1]).resolve()
     extraction_directory = Path(sys.argv[2]).resolve()
     verify_directory(target_directory, 0)
@@ -65,6 +71,7 @@ if __name__ == "__main__":
         else:
             i += 1
 
+    # Setup multithreading partial function
     extract_dicom_partial = partial(
         extract_and_save_image,
         save_directory=f"{extraction_directory}",
@@ -73,6 +80,7 @@ if __name__ == "__main__":
     worker_count = os.cpu_count() or 1
     print(f"Using {worker_count} workers.")
 
+    # Call extraction function
     with ProcessPoolExecutor(max_workers=worker_count) as executor:
         executor.map(extract_dicom_partial, dicom_paths)
 

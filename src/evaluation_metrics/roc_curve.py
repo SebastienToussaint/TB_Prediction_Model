@@ -43,6 +43,7 @@ def draw_roc_curve(inferred_probabilities: list, truth_labels: list, save_direct
         y.append(coord[1])
 
     plt.plot(x, y)
+    plt.title("ROC CURVE")
     plt.fill_between(x,y, alpha=0.4)
     plt.savefig(str(save_directory) + "/roc_curve.svg")
 

@@ -1,3 +1,5 @@
+import time
+
 from pympler.asizeof import asizeof, asized
 import torch
 from torch import nn
@@ -118,12 +120,15 @@ def run_training_loop(model: nn.Module, data_structure: data_handling.DataStruct
         training_filepaths = []
 
         for i in range(num_training_partitions):
+            time_1 = time.time()
 
             # Get the next chunk of data
             train_dataloader = data_structure.get_next_dataloader()
+            train_dataloader = data_structure.augment_data(train_dataloader, [-50, 50], [-50, 50], [-15, 15])
+            print(f"Took {time.time()-time_1} for data loading and augmentation.")
 
             for batch, (images, labels, filepaths) in enumerate(train_dataloader):
-
+                print(f"Processing {len(images)} images in batch")
                 images, labels = images.to(target_device), labels.to(target_device)
 
                 # Infer labels

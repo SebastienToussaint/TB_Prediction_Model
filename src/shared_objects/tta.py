@@ -4,6 +4,9 @@ import time
 from concurrent.futures import ProcessPoolExecutor
 import os
 from functools import partial
+
+import torch
+
 from utilities.directory_handling import verify_directory
 from pathlib import Path
 import cv2
@@ -11,8 +14,6 @@ import numpy as np
 import sys
 from scipy.stats import truncnorm
 
-# Global number of images transformed variable
-num_images_transformed = 1
 
 def get_random_value_normal(mean, lower_bound, upper_bound, standard_deviation):
     """
@@ -69,20 +70,17 @@ def rotate_image(img: cv2.typing.MatLike, rotation_range):
     return cv2.warpAffine(img, rotation_matrix, dimensions)
 
 
-def transform_image_affine(filepath, savefile_path, num_files_total,
+def transform_image_affine(filepath, savefile_path,
                     x_shift_range: list, y_shift_range: list,rotation_range: list):
     """
     Takes an image and applies to it affine transformations within the given parameters
     :param filepath: path to the directory of images to be transformed
     :param savefile_path: Folder to which transformed images should be saved to
-    :param num_files_total: total number of files in directory
     :param x_shift_range: minimum and maximum values that the image may be shifted in the x direction
     :param y_shift_range: minimum and maximum values that the image may be shifted in the y direction
     :param rotation_range: minimum and maximum angle that image may be rotated
     :return:
     """
-
-    global num_images_transformed
 
     # Open image and get information
     img = cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)
@@ -96,9 +94,16 @@ def transform_image_affine(filepath, savefile_path, num_files_total,
 
     # Create finished filename and save
     transformed_img_name = img_name[:img_name.rindex(".")] + "_transformed" + img_name[img_name.rindex("."):]
+
     cv2.imwrite(savefile_path + "/" + transformed_img_name, img)
 
-    num_images_transformed += 1
+def transform_pixel_array_affine(image, label, filename, transformed_images, x_shift_range: list, y_shift_range: list,rotation_range: list):
+    # Translation
+    img = translate_image(image.numpy(), x_shift_range, y_shift_range)
+    # Rotation
+    img = rotate_image(img, rotation_range)
+
+    transformed_images.append([torch.Tensor(img.astype(np.uint16)), label, "_-_TRANSFORMED_-_" + filename])
 
 
 def mirror_image(image: cv2.typing.MatLike):
@@ -109,62 +114,75 @@ def mirror_image(image: cv2.typing.MatLike):
     return cv2.flip(image, 1)
 
 
-# Look into usefulness/feasibility of this
-def transform_image_aspect_ratio():
-    pass
-
 # TODO: This function
 def transform_image_contrast():
     # Look at sigmoid based contrast adjustments. Better for x-rays to keep features intact
     pass
 
-time1 = time.time()
-if len(sys.argv) != 3:
-    print("Error: Incorrect usage\n"
-          "Usage: make tta_testing ARGS='<target_directory> <save_directory>'")
-    quit()
 
-images_directory = Path(sys.argv[1])
-save_directory = Path(sys.argv[2])
+def augment_data_from_dataloader(initial_data, x_shift_range: list, y_shift_range: list,rotation_range: list):
 
-verify_directory(images_directory, 0)
-verify_directory(save_directory, 1)
+    data = []
 
-# Get number of files in directory
-file_count = 0
-for file in images_directory.iterdir():
-    if file.is_file():
-        file_count += 1
+    for batch in initial_data:
+        transform_pixel_array_affine(batch[0], batch[1], batch[2], data,
+                                    x_shift_range=x_shift_range,
+                                    y_shift_range=y_shift_range,
+                                    rotation_range=rotation_range)
 
-# Get all paths
-image_paths = list(images_directory.iterdir())
+    return data
 
-# Filter out non-pngs
-i = 0
-while i < len(image_paths):
-    if not str(image_paths[i]).endswith(".png"):
-        print(f"Non png filepath found at {image_paths[i]}")
-        image_paths.pop(i)
-    else:
-        i += 1
 
-transform_affine_partial = partial(
-    transform_image_affine,
-    savefile_path=f"{save_directory}",
-    num_files_total=file_count,
-    x_shift_range=[-250, 250],
-    y_shift_range=[-100, 100],
-    rotation_range=[-10, 10]
-)
 
-worker_count = os.cpu_count() or 1
-print(f"Using {worker_count} workers.")
 
-with ProcessPoolExecutor(max_workers=worker_count) as executor:
-        executor.map(transform_affine_partial, image_paths )
+if __name__ == "__main__":
+    time1 = time.time()
+    if len(sys.argv) != 3:
+        print("Error: Incorrect usage\n"
+              "Usage: make tta_testing ARGS='<target_directory> <save_directory>'")
+        quit()
 
-print(f"\nSuccessfully transformed all images {file_count} in {images_directory.absolute()}/\nTransformed images have been saved to {save_directory.absolute()}/")
+    images_directory = Path(sys.argv[1])
+    save_directory = Path(sys.argv[2])
 
-time2 = time.time()
+    verify_directory(images_directory, 0)
+    verify_directory(save_directory, 1)
 
-print(f"Took {time2-time1}")
+    # Get number of files in directory
+    file_count = 0
+    for file in images_directory.iterdir():
+        if file.is_file():
+            file_count += 1
+
+    # Get all paths
+    image_paths = list(images_directory.iterdir())
+
+    # Filter out non-pngs
+    i = 0
+    while i < len(image_paths):
+        if not str(image_paths[i]).endswith(".png"):
+            print(f"Non png filepath found at {image_paths[i]}")
+            image_paths.pop(i)
+        else:
+            i += 1
+
+    transform_affine_partial = partial(
+        transform_image_affine,
+        savefile_path=f"{save_directory}",
+        num_files_total=file_count,
+        x_shift_range=[-250, 250],
+        y_shift_range=[-100, 100],
+        rotation_range=[-10, 10]
+    )
+
+    worker_count = os.cpu_count() or 1
+    print(f"Using {worker_count} workers.")
+
+    with ProcessPoolExecutor(max_workers=worker_count) as executor:
+            executor.map(transform_affine_partial, image_paths )
+
+    print(f"\nSuccessfully transformed all images {file_count} in {images_directory.absolute()}/\nTransformed images have been saved to {save_directory.absolute()}/")
+
+    time2 = time.time()
+
+    print(f"Took {time2-time1}")

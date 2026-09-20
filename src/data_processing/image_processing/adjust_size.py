@@ -2,6 +2,7 @@ from pathlib import Path
 import cv2
 import sys
 from utilities.directory_handling import verify_directory
+import numpy as np
 
 def resize_image(img, target_width, target_height):
     """
@@ -42,7 +43,7 @@ if __name__ == "__main__":
     # Argument Management
     if len(sys.argv) != 4:
         print("ERROR: Incorrect arguments provided\n"
-              "Usage: make standardize_images ARGS='<images_directory> <target_width> <target_height>'")
+              "Usage: make resize_images ARGS='<images_directory> <target_width> <target_height>'")
         quit()
 
     target_directory = Path(sys.argv[1])

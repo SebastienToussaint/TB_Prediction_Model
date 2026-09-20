@@ -6,11 +6,7 @@ from pathlib import Path
 from utilities.directory_handling import verify_directory
 import sys
 
-from matplotlib import pyplot as plt
-
-
-
-def normalize_range(img, percentile_min=0.5, percentile_max=99.5):
+def normalize_range(img, percentile_min=0.1, percentile_max=99.9):
         img = img.astype(np.uint16)
 
         assert img.dtype == np.uint16
@@ -38,7 +34,7 @@ def transform_contrast_sigmoid(img):
         # Remove absolute blacks
         pixel_array = pixel_array[pixel_array > 0.02]
         cf = float((0.5+np.median(pixel_array))/2)  #TODO: Especially for here
-        percentile_5, percentile_95 = np.percentile(pixel_array, [5, 90])
+        percentile_5, percentile_95 = np.percentile(pixel_array, [2, 98])
         iqr = percentile_95 - percentile_5
         if iqr < 0.0001:
             iqr = 1

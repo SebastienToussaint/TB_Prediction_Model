@@ -1,5 +1,6 @@
 import pickle
 import csv
+from shared_objects.data_handling import CustomDataset
 import torch.cuda
 from pympler.asizeof import asizeof
 from torch import nn
@@ -320,10 +321,9 @@ class CNN(nn.Module):
 
 
 if __name__ == "__main__":
-    pass
-    # m = CNN()
-    # m.load("E:\Project\TESTING\Models\TrackingModel\model_tracker.pkl")
-    # m.draw_eval_graphs("E:\Project\TESTING\Models\TrackingModel/Metrics")
+    m = CNN()
+    m.load("E:\Project\TESTING\Models/CXR_Model/model.pkl")
+    m.draw_eval_graphs("E:\Project\TESTING\Models/CXR_Model/Metrics")
     # m.output_image_scores("E:\Project\TESTING\Models\TrackingModel/")
 
     # m.load("E:\Project\Savefiles\Models\HPC_MIXED\model_mixed.pkl")

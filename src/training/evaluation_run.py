@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from  shared_objects import data_handling
+from  shared_objects.data_handling import CustomDataset, DataStructure
 from evaluation_metrics import accuracy, core_metrics, diagnostic_odds_ratio, f1_score, fowlkes_mallows_index
 from evaluation_metrics import informedness, jaccard_index, markedness, mcc, prevalence_threshold
 from evaluation_metrics import roc_curve
@@ -8,7 +8,6 @@ from utilities.directory_handling import verify_directory
 from pathlib import Path
 import csv
 from utilities.array_handling import flatten_list
-
 
 
 def write_evaluations(inferred_probabilities, truth_labels, output_directory):
@@ -47,7 +46,7 @@ def write_evaluations(inferred_probabilities, truth_labels, output_directory):
     csv_filepath = output_filepath + "/evaluations.csv"
 
 
-    with open(csv_filepath, "w") as file:
+    with open(csv_filepath, "w", newline="") as file:
         csv_writer = csv.writer(file)
 
         csv_writer.writerows(metrics)
@@ -56,7 +55,7 @@ def write_evaluations(inferred_probabilities, truth_labels, output_directory):
 
 
 
-def run_evaluation(model: nn.Module, ds: data_handling.DataStructure, output_directory, device: str = "cpu"):
+def run_evaluation(model: nn.Module, ds: DataStructure, output_directory, device: str = "cpu"):
 
     verify_directory(output_directory, 2)
 
@@ -74,7 +73,7 @@ def run_evaluation(model: nn.Module, ds: data_handling.DataStructure, output_dir
         for i in range(num_partitions):
             partition = ds.get_next_dataloader()
 
-            for images, labels in partition:
+            for images, labels, filepaths in partition:
                 images, labels = images.to(device), labels.to(device)
 
                 images = images.unsqueeze(1)

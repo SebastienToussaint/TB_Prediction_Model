@@ -1,12 +1,8 @@
-import time
 import torch
 import matplotlib.pyplot as plt
-import pickle
-from utilities.directory_handling import verify_directory
-from shared_objects.data_handling import DataStructure, CustomDataset # Import CustomDataset to prevent error with pickle
+from shared_objects.data_handling import DataStructure, CustomDataset  # Import CustomDataset to prevent error with pickle
 from training.training_loop import run_training_loop
 from shared_objects import models
-from pathlib import Path
 from training.evaluation_run import run_evaluation
 
 
@@ -136,7 +132,7 @@ class Trainer:
                     batch_labels = batch_labels.to("cpu")
 
                     batch_images = batch_images.unsqueeze(1)
-                    print(batch_images.shape)
+
                     predicted_labels = torch.round(torch.sigmoid(model(batch_images)))
 
 
@@ -155,31 +151,23 @@ class Trainer:
 
     @staticmethod
     def evaluate_model(model, data_structure: DataStructure, save_directory):
-        run_evaluation(model, data_structure, save_directory)
-
-
+        run_evaluation(model, data_structure, save_directory, "cuda")
 
 
 if __name__ == "__main__":
     model_0 = models.CNN()
-    # model_0.create_standard(1, 48, 1)
-    model_0.load("E:/Project/TESTING/Models/TrackingModel/model_tracker.pkl")
+    model_0.create_standard(1, 64, 1)
+    # model_0.load("E:\Project\TESTING\Models/CXR_Model/model.pkl")
     ds = DataStructure()
-    ds.reset_dataloader_index()
-    ds.set_native_datapath("E:/Project/TESTING/Data/Dataloaders/fashion_dataloaders")
-    # ds.set_native_datapath("E:/Project/data/tests/dataloaders/")
+    ds.set_native_datapath("E:\Project\TESTING\Data\Dataloaders\FullSize")
     t = Trainer()
 
-    # t.train(1, model_0, ds, "BCE", "Adam", 0.001, "ANY", 1,
-    #         metrics_to_log=["Acc", "Bacc", "MCC"])
+    t.train(5, model_0, ds, "BCE", "Adam", 0.001, "ANY", 1,
+            metrics_to_log=["Acc", "Bacc", "MCC"])
 
-    # print(model_0.image_scores_training)
-    # print(model_0.image_scores_testing)
+    # model_0.save("E:\Project\TESTING\Models/CXR_Model/", "model.pkl")
 
-    # model_0.draw_eval_graphs("E:\Project\TESTING\Models\TrackingModel/Metrics")
-    # model_0.output_image_scores("E:\Project\TESTING\Models\TrackingModel/")
-
-    # model_0.save("E:\Project\TESTING\Models\TrackingModel", "model_tracker.pkl")
-
-    t.manual_observation(model_0, ds)
-    # t.evaluate_model(model_0, ds, "test_data/evals")
+    # ds.set_native_datapath("E:\Project\TESTING\Data\Dataloaders\Shenzhen/Test")
+    #
+    # # t.manual_observation(model_0, ds)
+    # t.evaluate_model(model_0, ds, "E:\Project\TESTING\Models\CXR_Model/TestingEvals")
