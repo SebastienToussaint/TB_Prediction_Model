@@ -76,7 +76,17 @@ def update_model_image_scores(model, inferred_probs, truth_labels, image_paths, 
         model.update_image_scores_training(correct_paths, incorrect_paths)
     else:
         model.update_image_scores_testing(correct_paths, incorrect_paths)
+def print_gpu_memory(prefix=""):
+    allocated = torch.cuda.memory_allocated() / 1024**3
+    reserved = torch.cuda.memory_reserved() / 1024**3
+    peak = torch.cuda.max_memory_allocated() / 1024**3
 
+    print(
+        f"{prefix} | "
+        f"allocated={allocated:.2f} GB | "
+        f"reserved={reserved:.2f} GB | "
+        f"peak={peak:.2f} GB"
+    )
 
 def run_training_loop(model: nn.Module, data_structure: data_handling.DataStructure, number_of_epochs: int, loss_fn,
                       optimizer, target_device: str = "cpu", num_evaluation_partitions = 0,
@@ -105,6 +115,7 @@ def run_training_loop(model: nn.Module, data_structure: data_handling.DataStruct
               f"Please create more partitions or set reserve_evaluation_partition to False")
         quit()
 
+
     # Training loop
     for epoch in range(number_of_epochs):
         print(f"Epoch {epoch+1}/{number_of_epochs}")
@@ -125,30 +136,59 @@ def run_training_loop(model: nn.Module, data_structure: data_handling.DataStruct
             # Get the next chunk of data
             train_dataloader = data_structure.get_next_dataloader()
             train_dataloader = data_structure.augment_data(train_dataloader, [-50, 50], [-50, 50], [-15, 15])
-            print(f"Took {time.time()-time_1} for data loading and augmentation.")
+            # print(f"Took {time.time()-time_1} for data loading and augmentation.")
+
+
 
             for batch, (images, labels, filepaths) in enumerate(train_dataloader):
-                print(f"Processing {len(images)} images in batch")
+                # print(f"Processing {len(images)} images in batch")
+
+
+
+                # print_gpu_memory("Before batch")
+
                 images, labels = images.to(target_device), labels.to(target_device)
+
+                # print_gpu_memory("After batch")
 
                 # Infer labels
                 images = images.unsqueeze(1) # TODO: Need function to check if dims are correct (for model type) and update them on the fly
-                inferred_logits = model(images).squeeze()
-                inferred_prediction_values = torch.sigmoid(inferred_logits)
 
-                # Save inferred probabilities and truth labels
-                training_probs.append(inferred_prediction_values.detach().cpu().tolist())
-                training_labels.append(labels.detach().cpu().tolist())
-                training_filepaths.append(filepaths)
+                optimizer.zero_grad(set_to_none=True)
 
-                # Perform standard training loop operations
-                batch_loss = loss_fn(inferred_logits, labels.float())
+
+
+                with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+                    inferred_logits = model(images).squeeze()
+                    batch_loss = loss_fn(inferred_logits, labels.float())
+
+                # print_gpu_memory("After model and loss")
+
+                batch_loss.backward()
+
+                # print_gpu_memory("After backward")
+
+                optimizer.step()
+
                 total_train_loss += batch_loss.item()
                 train_batches_processed += 1
 
-                optimizer.zero_grad()
-                batch_loss.backward()
-                optimizer.step()
+
+                with torch.no_grad():
+                    inferred_prediction_values = torch.sigmoid(inferred_logits)
+
+                # Save inferred probabilities and truth labels
+                training_probs.append(inferred_prediction_values.cpu().tolist())
+                training_labels.append(labels.cpu().tolist())
+                training_filepaths.append(filepaths)
+
+                # Perform standard training loop operations
+
+            print_gpu_memory("Mem info")
+            torch.cuda.reset_peak_memory_stats()
+
+
+
 
         # =========================================================================================
 

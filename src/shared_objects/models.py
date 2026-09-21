@@ -322,8 +322,8 @@ class CNN(nn.Module):
 
 if __name__ == "__main__":
     m = CNN()
-    m.load("E:\Project\TESTING\Models/CXR_Model/model.pkl")
-    m.draw_eval_graphs("E:\Project\TESTING\Models/CXR_Model/Metrics")
+    m.load("E:\Project\Savefiles\Models\HPC_FULLSIZE_TTA_TEST/model.pkl")
+    m.draw_eval_graphs("E:\Project\Savefiles\Models\HPC_FULLSIZE_TTA_TEST/Metrics")
     # m.output_image_scores("E:\Project\TESTING\Models\TrackingModel/")
 
     # m.load("E:\Project\Savefiles\Models\HPC_MIXED\model_mixed.pkl")

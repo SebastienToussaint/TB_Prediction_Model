@@ -455,11 +455,11 @@ class DataStructure:
 if __name__ == "__main__":
     d = DataStructure()
 
-    # d.create_dataset([Path("E:\Project\TESTING\Data\Images\Fullsize")],
-    #                  6, 30, "E:\Project\TESTING\Data\Dataloaders\FullSize")
+    d.create_dataset([Path("E:\Project\TESTING\Data\Images\Fullsize/Shen"), Path("E:\Project\TESTING\Data\Images\Fullsize/TBX")],
+                     30, 30, "E:\Project\TESTING\Data\Dataloaders\FullsizeShenTBX/BatchSize30")
 
-    d.set_native_datapath("E:\Project\TESTING\Data\Dataloaders\FullSize")
-
-    dl = d.get_next_dataloader()
-
-    dl = d.augment_data(dl, [-50, 50], [-50, 50], [-15, 15])
+    # d.set_native_datapath("E:\Project\TESTING\Data\Dataloaders\FullSize")
+    #
+    # dl = d.get_next_dataloader()
+    #
+    # dl = d.augment_data(dl, [-50, 50], [-50, 50], [-15, 15])

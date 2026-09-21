@@ -157,12 +157,12 @@ class Trainer:
 if __name__ == "__main__":
     model_0 = models.CNN()
     model_0.create_standard(1, 64, 1)
-    # model_0.load("E:\Project\TESTING\Models/CXR_Model/model.pkl")
+    # model_0.load("E:\Project\Savefiles\Models\HPC_FULLSIZE_TTA_TEST/model.pkl")
     ds = DataStructure()
-    ds.set_native_datapath("E:\Project\TESTING\Data\Dataloaders\FullSize")
+    ds.set_native_datapath("E:\Project\TESTING\Data\Dataloaders\FullsizeShenTBX/BatchSize30")
     t = Trainer()
 
-    t.train(5, model_0, ds, "BCE", "Adam", 0.001, "ANY", 1,
+    t.train(5, model_0, ds, "BCE", "Adam", 0.001, "ANY", 6,
             metrics_to_log=["Acc", "Bacc", "MCC"])
 
     # model_0.save("E:\Project\TESTING\Models/CXR_Model/", "model.pkl")
@@ -170,4 +170,17 @@ if __name__ == "__main__":
     # ds.set_native_datapath("E:\Project\TESTING\Data\Dataloaders\Shenzhen/Test")
     #
     # # t.manual_observation(model_0, ds)
-    # t.evaluate_model(model_0, ds, "E:\Project\TESTING\Models\CXR_Model/TestingEvals")
+    # t.evaluate_model(model_0, ds, "E:\Project\Savefiles\Models\HPC_FULLSIZE_TTA_TEST/TestingEvals")
+
+
+
+
+
+
+
+
+
+
+
+
+
