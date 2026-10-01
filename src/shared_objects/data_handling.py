@@ -111,8 +111,51 @@ class DataStructure:
         negative_image_path_list = []
 
         for directory in images_directories:
-            directory = Path(str(directory))
+            directory = Path(str(directory)).resolve()
+            if not directory.is_dir():
+                print(f"Error while creating dataset.\n"
+                      f"Provided path {directory} is not a directory.")
+                quit(1)
             image_paths_list += list(directory.iterdir())
+
+        # Check for directories in image path list
+        idx = 0
+        found_directory_paths = []
+        while idx < len(image_paths_list):
+            if image_paths_list[idx].is_dir():
+                found_directory_paths.append(image_paths_list.pop(idx))
+            elif not str(image_paths_list[idx]).endswith(".png"):
+                print(f"Non-png file found at {image_paths_list[idx]}\n."
+                      f"Removing this file from the list of images.")
+                image_paths_list.pop(idx)
+            else:
+                idx += 1
+
+        def recursively_search_and_add_images(dir_path, imgs_list, img_extension=".png"):
+            for path in dir_path.iterdir():
+                if path.is_dir():
+                    recursively_search_and_add_images(path, imgs_list, img_extension)
+                elif str(path).endswith(img_extension):
+                    imgs_list.append(path)
+
+        if len(found_directory_paths) > 0:
+            additional_image_paths = []
+
+            for additional_path in found_directory_paths:
+                recursively_search_and_add_images(additional_path, additional_image_paths)
+            print(f"CAUTION: Sub-directories were found within the provided directories for dataset creation containing"
+                  f" a total of {len(additional_image_paths)} images.")
+
+            if not input(f"Would you like to add all the images found in the sub-directories to the dataset\n(CAUTION:"
+                         f" This will recursively add all the images found within all found directories downstream of "
+                         f"the provided directories (Total {len(additional_image_paths)} .pngs))? Y/n: ").upper() in ["YES", "Y"]:
+                print("Not adding additional images. Continuing without searching sub directories...")
+            else:
+                image_paths_list += additional_image_paths
+                print("Successfully added additional images from subdirectories to dataset.")
+
+
+
 
         # Split positively and negatively labelled images
         while len(image_paths_list) > 0:
@@ -300,6 +343,7 @@ class DataStructure:
                     idx += len(list(Path(str(save_directory)).iterdir()))
                 case _:
                     print("Exiting...")
+                    quit()
 
         for partition in partitioned_data:
             print(f"Writing dataloader {idx}")
@@ -318,8 +362,6 @@ class DataStructure:
             idx += 1
 
         del partitioned_data
-
-        self.set_native_datapath(str(save_directory))
 
     def get_next_dataloader(self, use_native_datapath: bool = True, path_to_dataloaders:str|Path = None):
 
@@ -382,10 +424,42 @@ class DataStructure:
     def set_native_datapath(self, datapath: Path | str):
         datapath = Path(str(datapath)).resolve()
 
+        if not datapath.is_dir():
+            print(f"Error while setting up dataloader datapath.\n"
+                  f"{datapath} needs to be a directory containing dataloaders.")
+            quit(1)
+
+        if len(list(datapath.iterdir())) == 0:
+            print(f"Error while setting up dataloader datapath.\n"
+                  f"{datapath} is an empty directory.")
+            quit(1)
+
+        for path in datapath.iterdir():
+            if path.is_dir():
+                print(f"Error while setting up dataloader datapath.\n"
+                      f"{path} is a directory. All files in the datapath directory need"
+                      f" to be dataloaders.")
+                quit(1)
+            with open(path, "rb") as file:
+                try:
+                    dataloader = pickle.load(file)
+                    if not isinstance(dataloader, DataLoader):
+                        print(f"Error while setting up dataloader datapath.\n"
+                              f"{path} is not an instance of a dataloader. All files in the datapath directory need"
+                              f" to be dataloaders.")
+                        quit(1)
+                except Exception as e :
+                    print(f"Error while setting up dataloader datapath.\n"
+                          f"{path} is likely not a dataloader.\n"
+                          f"Thrown exception: {e}")
+                    quit(1)
+
         verify_directory(datapath, 0)
 
         self.native_data_path = datapath
         self.reset_dataloader_index()
+
+        print("Successfully set datapath.")
 
     def shuffle_data(self):
         print("Shuffling data...")
@@ -435,6 +509,9 @@ class DataStructure:
 
     @staticmethod
     def observe_dataloader( dataloader):
+        """
+        Shows the images within the dataloader one at a time with their associated filepath and label.
+        """
         for batch in dataloader:
             batch_images = batch[0]
             batch_labels = batch[1]
@@ -455,11 +532,5 @@ class DataStructure:
 if __name__ == "__main__":
     d = DataStructure()
 
-    d.create_dataset([Path("E:\Project\TESTING\Data\Images\Fullsize/Shen"), Path("E:\Project\TESTING\Data\Images\Fullsize/TBX")],
-                     30, 30, "E:\Project\TESTING\Data\Dataloaders\FullsizeShenTBX/BatchSize30")
-
-    # d.set_native_datapath("E:\Project\TESTING\Data\Dataloaders\FullSize")
-    #
-    # dl = d.get_next_dataloader()
-    #
-    # dl = d.augment_data(dl, [-50, 50], [-50, 50], [-15, 15])
+    d.create_dataset([Path("/home/sebastien/Project/PIPELINETESTING/Data/TBX_11K/")],
+                     10, 30, "/home/sebastien/Project/PIPELINETESTING/Dataloaders/TBX11K/SickVsTB_BS30/")

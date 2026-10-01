@@ -121,7 +121,7 @@ def transform_image_contrast():
 
 
 def augment_data_from_dataloader(initial_data, x_shift_range: list, y_shift_range: list,rotation_range: list):
-
+    # TODO: Parallelize this
     data = []
 
     for batch in initial_data:

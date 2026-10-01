@@ -141,7 +141,7 @@ class CNN(nn.Module):
             nn.Flatten(),
             nn.Linear(hidden_units*2, output_shape)
         )
-
+        print("Succesfully created standard model.")
 
     def calculate_batch_metrics(self, group_batches: int= 1):
 
@@ -322,10 +322,6 @@ class CNN(nn.Module):
 
 if __name__ == "__main__":
     m = CNN()
-    m.load("E:\Project\Savefiles\Models\HPC_FULLSIZE_TTA_TEST/model.pkl")
-    m.draw_eval_graphs("E:\Project\Savefiles\Models\HPC_FULLSIZE_TTA_TEST/Metrics")
-    # m.output_image_scores("E:\Project\TESTING\Models\TrackingModel/")
-
-    # m.load("E:\Project\Savefiles\Models\HPC_MIXED\model_mixed.pkl")
-    # m.calculate_batch_metrics()
-    # m.draw_eval_graphs("E:\Project\Savefiles\Models\HPC_MIXED\Metrics")
+    m.load("/home/sebastien/Project/SaveFiles/Models/SickVsTB/model_SickVsTB.pkl")
+    m.draw_eval_graphs("/home/sebastien/Project/SaveFiles/Models/SickVsTB/Metrics")
+    m.output_image_scores("/home/sebastien/Project/SaveFiles/Models/SickVsTB/")

@@ -1,10 +1,12 @@
+import sys
 import torch
 import matplotlib.pyplot as plt
 from shared_objects.data_handling import DataStructure, CustomDataset  # Import CustomDataset to prevent error with pickle
 from training.training_loop import run_training_loop
 from shared_objects import models
 from training.evaluation_run import run_evaluation
-
+from pathlib import Path
+from utilities.directory_handling import verify_directory
 
 class Trainer:
     def __init__(self, model: torch.nn.Module|None=None, data_structure:DataStructure|None=None):
@@ -114,7 +116,7 @@ class Trainer:
 
         model.to("cpu")
 
-        num_partitions = ds.get_num_partitions()
+        num_partitions = data_structure.get_num_partitions()
 
         model.eval()
 
@@ -151,26 +153,133 @@ class Trainer:
 
     @staticmethod
     def evaluate_model(model, data_structure: DataStructure, save_directory):
-        run_evaluation(model, data_structure, save_directory, "cuda")
+        run_evaluation(model, data_structure, save_directory, "cpu")
 
+    @staticmethod
+    def decode_config_file(path_to_template):
+        """
+        :return: Dictionary containing decoded config info
+        """
+
+        decoded_dict = {}
+
+        with open(path_to_template, "r") as file:
+            for line in file:
+                # Remove comments
+                if "#" in line:
+                    line = line[0:line.index("#")]
+
+                # Remove leading and trailing spaces, skip empty line
+                line = line.strip()
+                if line in [""]:
+                    continue
+
+                # Decode each line
+                match line[0:line.index("=")].upper():
+                    case "MODEL_PATH":
+                        model_path = line[line.index("=")+1:]
+                        model_path = model_path.replace("'", "").replace('"', "")
+                        decoded_dict["model_path"] = model_path
+                    case "MODEL_SAVE_DIRECTORY":
+                        model_save_directory = line[line.index("=")+1:]
+                        model_save_directory = model_save_directory.replace("'", "").replace('"', "")
+                        decoded_dict["model_save_directory"] = model_save_directory
+                    case "MODEL_SAVE_INTERVAL":
+                        model_save_interval = line[line.index("=")+1:]
+                        try:
+                            model_save_interval = int(model_save_interval)
+                            if model_save_interval<0:
+                                raise ValueError
+                        except ValueError:
+                            print("Error while decoding config file. model_save_interval needs to be a positive integer or 0")
+                            quit()
+
+                        decoded_dict["model_save_interval"] = model_save_interval
+                    case "MAKE_CHARTS":
+                        make_charts = line[line.index("=")+1:]
+                        if make_charts.upper() == "TRUE":
+                            make_charts = True
+                        elif make_charts.upper() == "False":
+                            make_charts = False
+                        else:
+                            print("Error while decoding config file. make_charts needs to be True or False")
+                            quit()
+                        decoded_dict["make_charts"] = make_charts
+                    case "DATALOADERS_PATH":
+                        dataloaders_path = line[line.index("=")+1:]
+                        dataloaders_path = dataloaders_path.replace("'", "").replace('"', "")
+                        decoded_dict["dataloaders_path"] = dataloaders_path
+
+                    case "NUM_EPOCHS":
+                        num_epochs = line[line.index("=")+1:]
+                        try:
+                            num_epochs = int(num_epochs)
+                            if num_epochs<1:
+                                raise ValueError
+                        except ValueError:
+                            print("Error while decoding config file. num_epochs needs to be a positive integer")
+                            quit()
+
+                        decoded_dict["num_epochs"] = num_epochs
+                    case "LOSS_FUNCTION":
+                        loss_function = line[line.index("=")+1:]
+                        decoded_dict["loss_function"] = loss_function
+
+                    case "OPTIMIZER":
+                        optimizer = line[line.index("=")+1:]
+                        decoded_dict["optimizer"] = optimizer
+                    case "LEARNING_RATE":
+                        learning_rate = line[line.index("=")+1:]
+                        try:
+                            learning_rate = float(learning_rate)
+                            if learning_rate<0:
+                                raise ValueError
+                        except ValueError:
+                            print("Error while decoding config file. learning_rate needs to be a positive real number")
+                            quit()
+                        decoded_dict["learning_rate"] = learning_rate
+                    case "TRAINING_DEVICE":
+                        training_device = line[line.index("=")+1:]
+                        decoded_dict["training_device"] = training_device
+                    case "EVALUATION_PARTITIONS":
+                        evaluation_partitions = line[line.index("=")+1:]
+                        try:
+                            evaluation_partitions = int(evaluation_partitions)
+                            if evaluation_partitions<0:
+                                raise ValueError
+                        except ValueError:
+                            print("Error while decoding config file. evaluation_partitions needs to be a positive integer or 0")
+                            quit()
+                        decoded_dict["evaluation_partitions"] = evaluation_partitions
+                    case "SAVE_METRICS":
+                        save_metrics = line[line.index("=")+1:]
+                        if save_metrics.upper() == "TRUE":
+                            save_metrics = True
+                        elif save_metrics.upper() == "False":
+                            save_metrics = False
+                        else:
+                            print("Error while decoding config file. save_metrics needs to be True or False")
+                            quit()
+
+                        decoded_dict["save_metrics"] = save_metrics
+
+                    case "METRICS_TO_LOG":
+                        metrics_to_log = line[line.index("=")+1:]
+                        decoded_dict["metrics_to_log"] = metrics_to_log.split(",")
+
+                    case "MODEL_SAVE_NAME":
+                        model_save_name = line[line.index("=")+1:]
+                        decoded_dict["model_save_name"] = model_save_name
+
+                    case _:
+                        print(f"Error while decoding config file. {line} is not valid.")
+                        quit()
+
+        return decoded_dict
 
 if __name__ == "__main__":
-    model_0 = models.CNN()
-    model_0.create_standard(1, 64, 1)
-    # model_0.load("E:\Project\Savefiles\Models\HPC_FULLSIZE_TTA_TEST/model.pkl")
-    ds = DataStructure()
-    ds.set_native_datapath("E:\Project\TESTING\Data\Dataloaders\FullsizeShenTBX/BatchSize30")
-    t = Trainer()
+    pass
 
-    t.train(5, model_0, ds, "BCE", "Adam", 0.001, "ANY", 6,
-            metrics_to_log=["Acc", "Bacc", "MCC"])
-
-    # model_0.save("E:\Project\TESTING\Models/CXR_Model/", "model.pkl")
-
-    # ds.set_native_datapath("E:\Project\TESTING\Data\Dataloaders\Shenzhen/Test")
-    #
-    # # t.manual_observation(model_0, ds)
-    # t.evaluate_model(model_0, ds, "E:\Project\Savefiles\Models\HPC_FULLSIZE_TTA_TEST/TestingEvals")
 
 
 

@@ -47,7 +47,7 @@ def log_metrics(epoch: int, metrics_to_log, train_loss, train_probs, train_label
                     log_string += f"| Specificity: {round(core_metrics.calculate_specificity(train_probs, train_labels), round_values)} "
                     if test_labels:
                         log_string += f"(Test: {round(core_metrics.calculate_specificity(test_probs, test_labels), round_values)}) "
-                case "Precision":
+                case "PRECISION":
                     log_string += f"| Precision: {round(core_metrics.calculate_precision(train_probs, train_labels), round_values)} "
                     if test_labels:
                         log_string += f"(Test: {round(core_metrics.calculate_precision(test_probs, test_labels), round_values)}) "
