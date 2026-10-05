@@ -4,9 +4,7 @@ import time
 from concurrent.futures import ProcessPoolExecutor
 import os
 from functools import partial
-
 import torch
-
 from utilities.directory_handling import verify_directory
 from pathlib import Path
 import cv2
@@ -97,15 +95,6 @@ def transform_image_affine(filepath, savefile_path,
 
     cv2.imwrite(savefile_path + "/" + transformed_img_name, img)
 
-def transform_pixel_array_affine(image, label, filename, transformed_images, x_shift_range: list, y_shift_range: list,rotation_range: list):
-    # Translation
-    img = translate_image(image.numpy(), x_shift_range, y_shift_range)
-    # Rotation
-    img = rotate_image(img, rotation_range)
-
-    transformed_images.append([torch.Tensor(img.astype(np.uint16)), label, "_-_TRANSFORMED_-_" + filename])
-
-
 def mirror_image(image: cv2.typing.MatLike):
     """
     Mirror image along y-axis
@@ -120,15 +109,36 @@ def transform_image_contrast():
     pass
 
 
+def transform_pixel_array_affine(batch, x_shift_range: list, y_shift_range: list,rotation_range: list):
+    # Translation
+    img = translate_image(batch[0].numpy(), x_shift_range, y_shift_range)
+    # Rotation
+    img = rotate_image(img, rotation_range)
+
+    return [torch.Tensor(img.astype(np.uint16)), batch[1], "_-_TRANSFORMED_-_" + batch[2]]
+
+
 def augment_data_from_dataloader(initial_data, x_shift_range: list, y_shift_range: list,rotation_range: list):
-    # TODO: Parallelize this
     data = []
 
+    # worker_count = 2
+    # print(f"Using {worker_count} workers.")
+    #
+    # tpa_a_partial = partial(
+    #     transform_pixel_array_affine,
+    #     x_shift_range=x_shift_range,
+    #     y_shift_range=y_shift_range,
+    #     rotation_range=rotation_range
+    # )
+    #
+    # with ProcessPoolExecutor(max_workers=worker_count) as executor:
+    #         augmented_data = list(executor.map(tpa_a_partial, initial_data ))
+
     for batch in initial_data:
-        transform_pixel_array_affine(batch[0], batch[1], batch[2], data,
+        data.append(transform_pixel_array_affine(batch,
                                     x_shift_range=x_shift_range,
                                     y_shift_range=y_shift_range,
-                                    rotation_range=rotation_range)
+                                    rotation_range=rotation_range))
 
     return data
 
@@ -179,7 +189,7 @@ if __name__ == "__main__":
     print(f"Using {worker_count} workers.")
 
     with ProcessPoolExecutor(max_workers=worker_count) as executor:
-            executor.map(transform_affine_partial, image_paths )
+            executor.map(transform_affine_partial, image_paths)
 
     print(f"\nSuccessfully transformed all images {file_count} in {images_directory.absolute()}/\nTransformed images have been saved to {save_directory.absolute()}/")
 

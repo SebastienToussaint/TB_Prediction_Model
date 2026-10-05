@@ -12,7 +12,7 @@ def calculate_true_positive_rate(inferred_probabilities: list, truth_labels: lis
 
     if true_positives+false_negatives == 0:
         return 0
-    return true_positives/(true_positives+false_negatives) #TODO add div by 0 checks everywhere
+    return true_positives/(true_positives+false_negatives)
 
 
 def calculate_recall(inferred_probabilities: list, truth_labels: list): # For ease of use

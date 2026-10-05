@@ -146,8 +146,8 @@ class CNN(nn.Module):
     def calculate_batch_metrics(self, group_batches: int= 1):
 
 
-        metrics = ["accuracy", "balanced_accuracy", "recall", "specificity", "precision", "dor", "f1", "fowlkes_mallows_index",
-                   "informedness", "jaccard_index", "markedness", "mcc", "prevalence_threshold"]
+        metrics = ["Accuracy", "Balanced Accuracy", "Recall", "Specificity", "Precision", "DOR", "F1", "Fowlkes Mallows Index",
+                   "Informedness", "Jaccard Index", "Markedness", "MCC", "Prevalence Threshold"]
 
         training_evaluations = {}
         testing_evaluations = {}
@@ -160,82 +160,82 @@ class CNN(nn.Module):
 
         for epoch, epoch_probabilities in enumerate(self.train_prediction_probabilities):
             for batch_num, batch_probabilities in enumerate(epoch_probabilities):
-                training_evaluations["accuracy"].append(accuracy.calculate_accuracy(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
+                training_evaluations["Accuracy"].append(accuracy.calculate_accuracy(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
 
-                training_evaluations["balanced_accuracy"].append(
+                training_evaluations["Balanced Accuracy"].append(
                     accuracy.calculate_balanced_accuracy(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
 
-                training_evaluations["recall"].append(
+                training_evaluations["Recall"].append(
                     core_metrics.calculate_recall(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
 
-                training_evaluations["specificity"].append(
+                training_evaluations["Specificity"].append(
                     core_metrics.calculate_specificity(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
 
-                training_evaluations["precision"].append(
+                training_evaluations["Precision"].append(
                     core_metrics.calculate_precision(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
 
-                training_evaluations["dor"].append(
+                training_evaluations["DOR"].append(
                     diagnostic_odds_ratio.calculate_diagnostic_odds_ratio(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
 
-                training_evaluations["f1"].append(
+                training_evaluations["F1"].append(
                     f1_score.calculate_f1_score(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
 
-                training_evaluations["fowlkes_mallows_index"].append(
+                training_evaluations["Fowlkes Mallows Index"].append(
                     fowlkes_mallows_index.calculate_fowlkes_mallows_index(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
 
-                training_evaluations["informedness"].append(
+                training_evaluations["Informedness"].append(
                     informedness.calculate_informedness(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
 
-                training_evaluations["jaccard_index"].append(
+                training_evaluations["Jaccard Index"].append(
                     jaccard_index.calculate_jaccard_index(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
 
-                training_evaluations["markedness"].append(
+                training_evaluations["Markedness"].append(
                     markedness.calculate_markedness(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
 
-                training_evaluations["mcc"].append(
+                training_evaluations["MCC"].append(
                     mcc.calculate_matthews_correlation_coefficient(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
 
-                training_evaluations["prevalence_threshold"].append(
+                training_evaluations["Prevalence Threshold"].append(
                     prevalence_threshold.calculate_prevalence_threshold(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
 
         for epoch, epoch_probabilities in enumerate(self.test_prediction_probabilities):
             for batch_num, batch_probabilities in enumerate(epoch_probabilities):
-                testing_evaluations["accuracy"].append(accuracy.calculate_accuracy(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
+                testing_evaluations["Accuracy"].append(accuracy.calculate_accuracy(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
 
-                testing_evaluations["balanced_accuracy"].append(
+                testing_evaluations["Balanced Accuracy"].append(
                     accuracy.calculate_balanced_accuracy(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
 
-                testing_evaluations["recall"].append(
+                testing_evaluations["Recall"].append(
                     core_metrics.calculate_recall(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
 
-                testing_evaluations["specificity"].append(
+                testing_evaluations["Specificity"].append(
                     core_metrics.calculate_specificity(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
 
-                testing_evaluations["precision"].append(
+                testing_evaluations["Precision"].append(
                     core_metrics.calculate_precision(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
 
-                testing_evaluations["dor"].append(
+                testing_evaluations["DOR"].append(
                     diagnostic_odds_ratio.calculate_diagnostic_odds_ratio(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
 
-                testing_evaluations["f1"].append(
+                testing_evaluations["F1"].append(
                     f1_score.calculate_f1_score(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
 
-                testing_evaluations["fowlkes_mallows_index"].append(
+                testing_evaluations["Fowlkes Mallows Index"].append(
                     fowlkes_mallows_index.calculate_fowlkes_mallows_index(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
 
-                testing_evaluations["informedness"].append(
+                testing_evaluations["Informedness"].append(
                     informedness.calculate_informedness(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
 
-                testing_evaluations["jaccard_index"].append(
+                testing_evaluations["Jaccard Index"].append(
                     jaccard_index.calculate_jaccard_index(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
 
-                testing_evaluations["markedness"].append(
+                testing_evaluations["Markedness"].append(
                     markedness.calculate_markedness(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
 
-                testing_evaluations["mcc"].append(
+                testing_evaluations["MCC"].append(
                     mcc.calculate_matthews_correlation_coefficient(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
 
-                testing_evaluations["prevalence_threshold"].append(
+                testing_evaluations["Prevalence Threshold"].append(
                     prevalence_threshold.calculate_prevalence_threshold(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
 
         return training_evaluations, testing_evaluations
@@ -243,16 +243,25 @@ class CNN(nn.Module):
     def draw_eval_graphs(self, save_directory:str|Path, window_size: int = None,
                          group_batches: int = 1):
 
-        metrics = ["accuracy", "balanced_accuracy", "recall", "specificity", "precision", "dor", "f1",
-                   "fowlkes_mallows_index",
-                   "informedness", "jaccard_index", "markedness", "mcc", "prevalence_threshold"]
 
-        verify_directory(save_directory, 2)
+
+        metrics = ["Accuracy", "Balanced Accuracy", "Recall", "Specificity", "Precision", "DOR", "F1",
+                   "Fowlkes Mallows Index",
+                   "Informedness", "Jaccard Index", "Markedness", "MCC", "Prevalence Threshold"]
+
+
 
         training_evaluations, testing_evaluations = self.calculate_batch_metrics(group_batches)
 
+        if not len(training_evaluations["Accuracy"]) > 0:
+            print("Error when drawing eval graphs. No training data found in model. Set save_metrics=True in training template.")
+            return
+
+
+        verify_directory(save_directory, 2)
+
         if not window_size:
-            window = max(1, int(len(training_evaluations["accuracy"])/20))
+            window = max(1, int(len(training_evaluations["Accuracy"])/20))
         else:
             window = window_size
 
@@ -263,18 +272,18 @@ class CNN(nn.Module):
                      linewidth=2,
                      label="Smoothed")
 
-            plt.title(f"{metric} change over batches")
-            plt.xlabel("Batch")
+            # plt.title(f"{metric} change over batches")
+            plt.xlabel("Batch Number")
             plt.ylabel(metric)
             plt.legend()
-            plt.savefig(str(Path(str(save_directory)).resolve()) + "/training_" + metric + ".svg", format="svg")
+            plt.savefig(str(Path(str(save_directory)).resolve()) + "/training_" + metric.replace(" ", "_") + ".svg", format="svg")
             plt.close()
 
 
 
-        if len(testing_evaluations["accuracy"]) > 0:
+        if len(testing_evaluations["Accuracy"]) > 0:
             if not window_size:
-                window = max(1, int(len(testing_evaluations["accuracy"]) / 20))
+                window = max(1, int(len(testing_evaluations["Accuracy"]) / 20))
             else:
                 window = window_size
 
@@ -285,11 +294,11 @@ class CNN(nn.Module):
                          linewidth=2,
                          label="Smoothed")
 
-                plt.title(f"{metric} change over batches")
-                plt.xlabel("Batch")
+                # plt.title(f"{metric} change over batches")
+                plt.xlabel("Batch number")
                 plt.ylabel(metric)
                 plt.legend()
-                plt.savefig(str(Path(str(save_directory)).resolve()) + "/testing_" + metric + ".svg", format="svg")
+                plt.savefig(str(Path(str(save_directory)).resolve()) + "/testing_" + metric.replace(" ", "_") + ".svg", format="svg")
                 plt.close()
 
 
@@ -322,6 +331,6 @@ class CNN(nn.Module):
 
 if __name__ == "__main__":
     m = CNN()
-    m.load("/home/sebastien/Project/SaveFiles/Models/SickVsTB/model_SickVsTB.pkl")
-    m.draw_eval_graphs("/home/sebastien/Project/SaveFiles/Models/SickVsTB/Metrics")
-    m.output_image_scores("/home/sebastien/Project/SaveFiles/Models/SickVsTB/")
+    m.load("E:\Project\Savefiles\Models\ShenTBX_HealthyVsTB\model_BS75.pkl")
+    m.draw_eval_graphs("E:\Project\Savefiles\Models\ShenTBX_HealthyVsTB/Metrics")
+    # m.output_image_scores("/home/sebastien/Project/SaveFiles/Models/SickVsTB/")

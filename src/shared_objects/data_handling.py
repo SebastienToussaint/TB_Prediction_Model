@@ -293,7 +293,7 @@ class DataStructure:
     def _partition_selected_image_paths(num_partitions, selected_images):
 
         if num_partitions > len(selected_images):
-            print(f"Error while creating dataset. More partitions ({num_partitions}) than images ({len(selected_images)}")
+            print(f"Error while creating dataset. More partitions ({num_partitions}) than images ({len(selected_images)})")
 
         images_per_partition = ceil(len(selected_images)/num_partitions)
 
@@ -505,6 +505,8 @@ class DataStructure:
 
         dataloader = DataLoader(CustomDataset(data), batch_size, True)
 
+
+
         return dataloader
 
     @staticmethod
@@ -531,6 +533,15 @@ class DataStructure:
 
 if __name__ == "__main__":
     d = DataStructure()
+    d.set_native_datapath("E:/Project/TESTING\Data/Dataloaders/SickVsTB_Large")
 
-    d.create_dataset([Path("/home/sebastien/Project/PIPELINETESTING/Data/TBX_11K/")],
-                     10, 30, "/home/sebastien/Project/PIPELINETESTING/Dataloaders/TBX11K/SickVsTB_BS30/")
+    num = d.get_num_partitions()
+
+    start_time = time.time()
+    for i in range(num):
+        print(f"DL {i} of {num}")
+
+        dl = d.get_next_dataloader()
+        d.augment_data(dl, [-50, 50], [-50, 50], [-15, 15])
+
+    print(f"Time taken: {time.time() - start_time}")

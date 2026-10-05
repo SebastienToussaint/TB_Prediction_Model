@@ -141,32 +141,20 @@ def run_training_loop(model: nn.Module, data_structure: data_handling.DataStruct
 
 
             for batch, (images, labels, filepaths) in enumerate(train_dataloader):
-                # print(f"Processing {len(images)} images in batch")
-
-
-
-                # print_gpu_memory("Before batch")
 
                 images, labels = images.to(target_device), labels.to(target_device)
 
-                # print_gpu_memory("After batch")
 
                 # Infer labels
                 images = images.unsqueeze(1) # TODO: Need function to check if dims are correct (for model type) and update them on the fly
 
                 optimizer.zero_grad(set_to_none=True)
 
-
-
                 with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
                     inferred_logits = model(images).squeeze()
                     batch_loss = loss_fn(inferred_logits, labels.float())
 
-                # print_gpu_memory("After model and loss")
-
                 batch_loss.backward()
-
-                # print_gpu_memory("After backward")
 
                 optimizer.step()
 
@@ -182,10 +170,9 @@ def run_training_loop(model: nn.Module, data_structure: data_handling.DataStruct
                 training_labels.append(labels.cpu().tolist())
                 training_filepaths.append(filepaths)
 
-                # Perform standard training loop operations
 
-            print_gpu_memory("Mem info")
-            torch.cuda.reset_peak_memory_stats()
+            # print_gpu_memory("Mem info")
+            # torch.cuda.reset_peak_memory_stats()
 
 
 
