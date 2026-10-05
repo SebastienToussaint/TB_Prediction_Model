@@ -487,7 +487,7 @@ class DataStructure:
 
     @staticmethod
     def augment_data(dataloader, x_shift_range: list, y_shift_range: list, rotation_range: list):
-        print("Augmenting dataloader...")
+        # print("Augmenting dataloader...")
 
         data = []
         batch_size = 0

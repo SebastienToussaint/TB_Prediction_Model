@@ -115,7 +115,6 @@ def run_training_loop(model: nn.Module, data_structure: data_handling.DataStruct
               f"Please create more partitions or set reserve_evaluation_partition to False")
         quit()
 
-
     # Training loop
     for epoch in range(number_of_epochs):
         print(f"Epoch {epoch+1}/{number_of_epochs}")
@@ -131,19 +130,13 @@ def run_training_loop(model: nn.Module, data_structure: data_handling.DataStruct
         training_filepaths = []
 
         for i in range(num_training_partitions):
-            time_1 = time.time()
-
             # Get the next chunk of data
             train_dataloader = data_structure.get_next_dataloader()
             train_dataloader = data_structure.augment_data(train_dataloader, [-50, 50], [-50, 50], [-15, 15])
-            # print(f"Took {time.time()-time_1} for data loading and augmentation.")
-
-
 
             for batch, (images, labels, filepaths) in enumerate(train_dataloader):
 
                 images, labels = images.to(target_device), labels.to(target_device)
-
 
                 # Infer labels
                 images = images.unsqueeze(1) # TODO: Need function to check if dims are correct (for model type) and update them on the fly
@@ -171,9 +164,8 @@ def run_training_loop(model: nn.Module, data_structure: data_handling.DataStruct
                 training_filepaths.append(filepaths)
 
 
-            # print_gpu_memory("Mem info")
-            # torch.cuda.reset_peak_memory_stats()
-
+        print_gpu_memory("Mem info")
+        torch.cuda.reset_peak_memory_stats()
 
 
 
