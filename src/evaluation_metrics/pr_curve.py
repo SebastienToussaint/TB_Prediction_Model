@@ -1,5 +1,5 @@
 import numpy as np
-from evaluation_metrics.core_metrics import calculate_recall, calculate_precision
+from evaluation_metrics.core_metrics import calculate_sensitivity, calculate_precision
 from matplotlib import pyplot as plt
 
 
@@ -10,16 +10,16 @@ def calculate_pr_values(inferred_probabilities: list, truth_labels: list):
     pr_coords = [[0.0, 1.0]]
 
     for cutoff_value in thresholds:
-        inferred_labels = []
+        # inferred_labels = []
 
-        for probability in inferred_probabilities:
-            if probability >= cutoff_value:
-                inferred_labels.append(1)
-            else:
-                inferred_labels.append(0)
+        # for probability in inferred_probabilities:
+        #     if probability >= cutoff_value:
+        #         inferred_labels.append(1)
+        #     else:
+        #         inferred_labels.append(0)
 
-        recall = calculate_recall(inferred_labels, truth_labels)
-        precision = calculate_precision(inferred_labels, truth_labels)
+        recall = calculate_sensitivity(inferred_probabilities, truth_labels, cutoff_value)
+        precision = calculate_precision(inferred_probabilities, truth_labels, cutoff_value)
 
         pr_coords.append([recall, precision])
 

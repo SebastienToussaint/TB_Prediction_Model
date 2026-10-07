@@ -1,9 +1,9 @@
 model_path=''                   # If left empty, will create model from scratch
 model_save_directory='E:\Project\TESTING\Models\TTA_tested'
 model_save_name=model.pkl
-dataloaders_path='E:\Project\TESTING\Data\Dataloaders\SickVsTB_Large/'
+dataloaders_path='E:\Project\TESTING\Data\Dataloaders\smallset/'
 num_epochs=5
-evaluation_partitions=0          # How many dataloaders should be reserved for evaluation every epoch
+evaluation_partitions=1         # How many dataloaders should be reserved for evaluation every epoch
 loss_function=BCE
 optimizer=Adam                # SGD, SGD-Momentum, ADAM, ADAMW, ADAFACTOR, RMSPROP
 learning_rate=0.00001

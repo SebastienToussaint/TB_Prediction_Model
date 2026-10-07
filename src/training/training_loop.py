@@ -39,10 +39,10 @@ def log_metrics(epoch: int, metrics_to_log, train_loss, train_probs, train_label
                     log_string += f"| F1-Score: {round(f1_score.calculate_f1_score(train_probs, train_labels), round_values)} "
                     if test_labels:
                         log_string += f"(Test: {round(f1_score.calculate_f1_score(test_probs, test_labels), round_values)}) "
-                case "RECALL":
-                    log_string += f"| Recall: {round(core_metrics.calculate_recall(train_probs, train_labels), round_values)} "
+                case "SENSITIVITY":
+                    log_string += f"| Sensitivity: {round(core_metrics.calculate_sensitivity(train_probs, train_labels), round_values)} "
                     if test_labels:
-                        log_string += f"(Test: {round(core_metrics.calculate_recall(test_probs, test_labels), round_values)}) "
+                        log_string += f"(Test: {round(core_metrics.calculate_sensitivity(test_probs, test_labels), round_values)}) "
                 case "SPECIFICITY":
                     log_string += f"| Specificity: {round(core_metrics.calculate_specificity(train_probs, train_labels), round_values)} "
                     if test_labels:
@@ -54,7 +54,7 @@ def log_metrics(epoch: int, metrics_to_log, train_loss, train_probs, train_label
                 case _:
                     if epoch == 0:
                         print(f"Could not find {metric} as metric to log.")
-                        print("Options are: ACC, BACC, MCC, F1, Recall, Specificity, Precision.")
+                        print("Options are: ACC, BACC, MCC, F1, Sensitivity, Specificity, Precision.")
 
     print(log_string)
 

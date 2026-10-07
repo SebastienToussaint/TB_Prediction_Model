@@ -146,7 +146,7 @@ class CNN(nn.Module):
     def calculate_batch_metrics(self, group_batches: int= 1):
 
 
-        metrics = ["Accuracy", "Balanced Accuracy", "Recall", "Specificity", "Precision", "DOR", "F1", "Fowlkes Mallows Index",
+        metrics = ["Accuracy", "Balanced Accuracy", "Sensitivity", "Specificity", "Precision", "DOR", "F1", "Fowlkes Mallows Index",
                    "Informedness", "Jaccard Index", "Markedness", "MCC", "Prevalence Threshold"]
 
         training_evaluations = {}
@@ -165,8 +165,8 @@ class CNN(nn.Module):
                 training_evaluations["Balanced Accuracy"].append(
                     accuracy.calculate_balanced_accuracy(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
 
-                training_evaluations["Recall"].append(
-                    core_metrics.calculate_recall(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
+                training_evaluations["Sensitivity"].append(
+                    core_metrics.calculate_sensitivity(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
 
                 training_evaluations["Specificity"].append(
                     core_metrics.calculate_specificity(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
@@ -205,8 +205,8 @@ class CNN(nn.Module):
                 testing_evaluations["Balanced Accuracy"].append(
                     accuracy.calculate_balanced_accuracy(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
 
-                testing_evaluations["Recall"].append(
-                    core_metrics.calculate_recall(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
+                testing_evaluations["Sensitivity"].append(
+                    core_metrics.calculate_sensitivity(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
 
                 testing_evaluations["Specificity"].append(
                     core_metrics.calculate_specificity(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
@@ -245,7 +245,7 @@ class CNN(nn.Module):
 
 
 
-        metrics = ["Accuracy", "Balanced Accuracy", "Recall", "Specificity", "Precision", "DOR", "F1",
+        metrics = ["Accuracy", "Balanced Accuracy", "Sensitivity", "Specificity", "Precision", "DOR", "F1",
                    "Fowlkes Mallows Index",
                    "Informedness", "Jaccard Index", "Markedness", "MCC", "Prevalence Threshold"]
 
@@ -331,6 +331,6 @@ class CNN(nn.Module):
 
 if __name__ == "__main__":
     m = CNN()
-    m.load("E:\Project\Savefiles\Models\ShenTBX_HealthyVsTB\model_BS75.pkl")
-    m.draw_eval_graphs("E:\Project\Savefiles\Models\ShenTBX_HealthyVsTB/Metrics")
+    m.load("E:\Project\Savefiles\Models\Retrained_model\model_SickVsTB_retrained.pkl")
+    m.draw_eval_graphs("E:\Project\Savefiles\Models\Retrained_model/Metrics")
     # m.output_image_scores("/home/sebastien/Project/SaveFiles/Models/SickVsTB/")

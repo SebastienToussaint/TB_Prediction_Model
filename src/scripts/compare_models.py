@@ -68,16 +68,16 @@ for m in models:
     m["balanced_accuracy"] = round(accuracy.calculate_balanced_accuracy(m["probabilities"], m["truth_labels"]), 5)
     m["mcc"] = round(mcc.calculate_matthews_correlation_coefficient(m["probabilities"], m["truth_labels"]), 5)
     m["roc-auc"] = round(roc_curve.calculate_roc_auc(m["probabilities"], m["truth_labels"]), 5)
-    m["recall"] = round(core_metrics.calculate_recall(m["probabilities"], m["truth_labels"]), 5)
+    m["sensitivity"] = round(core_metrics.calculate_sensitivity(m["probabilities"], m["truth_labels"]), 5)
     m["specificity"] = round(core_metrics.calculate_specificity(m["probabilities"], m["truth_labels"]), 5)
     m["precision"] = round(core_metrics.calculate_precision(m["probabilities"], m["truth_labels"]), 5)
     m["pr-auc"] = round(pr_curve.calculate_pr_auc(m["probabilities"], m["truth_labels"]), 5)
 
-output_data = [["Model name", "Accuracy", "Balanced accuracy", "Mcc", "Recall", "Specificity", "Precision", "ROC-AUC", "PR-AUC"]]
+output_data = [["Model name", "Accuracy", "Balanced accuracy", "Mcc", "Sensitivity", "Specificity", "Precision", "ROC-AUC", "PR-AUC"]]
 
 
 for m in models:
-    output_data.append([m["name"], m["accuracy"], m["balanced_accuracy"], m["mcc"], m["recall"], m["specificity"],
+    output_data.append([m["name"], m["accuracy"], m["balanced_accuracy"], m["mcc"], m["sensitivity"], m["specificity"],
                         m["precision"], m["roc-auc"], m["pr-auc"]])
 
 with open(str(output_directory) + "/comparative_evaluations.csv", "w", newline="") as file:
