@@ -18,18 +18,18 @@ import matplotlib.pyplot as plt
 import pympler.asizeof
 
 
-def write_evaluations(inferred_probabilities, truth_labels, output_directory, round_values=4, _no_output=False):
+def write_evaluations(inferred_probabilities, truth_labels, cutoff_value, output_directory, round_values=4, _no_output=False):
 
     print("Calculating evaluation metrics...")
 
     if not _no_output:
         print(f"Base evaluation statistics:\n"
               f"Accuracy: "
-              f"{round(accuracy.calculate_accuracy(inferred_probabilities, truth_labels), round_values)}\n"
+              f"{round(accuracy.calculate_accuracy(inferred_probabilities, truth_labels, cutoff_value), round_values)}\n"
               f"Balanced Accuracy: "
-              f"{round(accuracy.calculate_balanced_accuracy(inferred_probabilities, truth_labels), round_values)}\n"
+              f"{round(accuracy.calculate_balanced_accuracy(inferred_probabilities, truth_labels, cutoff_value), round_values)}\n"
               f"MCC: "
-              f"{round(mcc.calculate_matthews_correlation_coefficient(inferred_probabilities, truth_labels), round_values)}\n"
+              f"{round(mcc.calculate_matthews_correlation_coefficient(inferred_probabilities, truth_labels, cutoff_value), round_values)}\n"
               f"ROC-AUC: "
               f"{round(roc_curve.calculate_roc_auc(inferred_probabilities, truth_labels), round_values)}")
 
@@ -37,19 +37,19 @@ def write_evaluations(inferred_probabilities, truth_labels, output_directory, ro
 
     metrics = [
         ["Accuracy:",
-         round(accuracy.calculate_accuracy(inferred_probabilities, truth_labels), round_values)],
+         round(accuracy.calculate_accuracy(inferred_probabilities, truth_labels, cutoff_value), round_values)],
         ["Balanced Accuracy:",
-         round(accuracy.calculate_balanced_accuracy(inferred_probabilities, truth_labels), round_values)],
+         round(accuracy.calculate_balanced_accuracy(inferred_probabilities, truth_labels, cutoff_value), round_values)],
         ["Mathews Correlation Coefficient:",
-         round(mcc.calculate_matthews_correlation_coefficient(inferred_probabilities, truth_labels), round_values)],
+         round(mcc.calculate_matthews_correlation_coefficient(inferred_probabilities, truth_labels, cutoff_value), round_values)],
         ["ROC-AUC:",
-         round(roc_curve.calculate_roc_auc(inferred_probabilities, truth_labels), round_values)],
+         round(roc_curve.calculate_roc_auc(inferred_probabilities, truth_labels, ), round_values)],
         ["Sensitivity:",
-         round(core_metrics.calculate_sensitivity(inferred_probabilities, truth_labels), round_values)],
+         round(core_metrics.calculate_sensitivity(inferred_probabilities, truth_labels, cutoff_value), round_values)],
         ["Specificity:",
-         round(core_metrics.calculate_specificity(inferred_probabilities, truth_labels), round_values)],
+         round(core_metrics.calculate_specificity(inferred_probabilities, truth_labels, cutoff_value), round_values)],
         ["Precision:",
-         round(core_metrics.calculate_precision(inferred_probabilities, truth_labels), round_values)],
+         round(core_metrics.calculate_precision(inferred_probabilities, truth_labels, cutoff_value), round_values)],
         ["PR-AUC:",
          round(pr_curve.calculate_pr_auc(inferred_probabilities, truth_labels), round_values)],
     ]
@@ -147,10 +147,10 @@ def run_bootstrap_evaluation(repetitions: int, model: nn.Module, ds: DataStructu
     print(time.time() - time_1)
 
 
-def run_evaluation(model: nn.Module, ds: DataStructure, output_directory, device: str = "cpu",
+def run_evaluation(model: nn.Module, ds: DataStructure, cutoff_value,output_directory, device: str = "cpu",
                    metrics_decimal_places=4,_no_output=False):
 
-    print(f"Running evaluation on model using {device}...")
+    print(f"Running evaluation on model using {device} with cutoff value {cutoff_value}...")
 
     model.to(device)
     inferred_probs = []
@@ -179,6 +179,7 @@ def run_evaluation(model: nn.Module, ds: DataStructure, output_directory, device
         verify_directory(output_directory, 2)
         write_evaluations(flatten_list(inferred_probs),
                           flatten_list(truth_labels),
+                          cutoff_value,
                           output_directory,
                           metrics_decimal_places)
         return True

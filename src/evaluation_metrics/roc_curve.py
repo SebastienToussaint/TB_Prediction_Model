@@ -10,14 +10,6 @@ def get_youdens_j_point(inferred_probabilities: list, truth_labels: list):
     j_point = 0.5
 
     for cutoff_value in thresholds:
-        # inferred_labels = []
-
-        # for probability in inferred_probabilities:
-            # if probability > cutoff_value:
-            #     inferred_labels.append(1)
-            # else:
-            #     inferred_labels.append(0)
-
         tpr = calculate_true_positive_rate(inferred_probabilities, truth_labels, cutoff_value)
         fpr = calculate_false_positive_rate(inferred_probabilities, truth_labels, cutoff_value)
 
@@ -25,6 +17,8 @@ def get_youdens_j_point(inferred_probabilities: list, truth_labels: list):
             max_j_value = tpr-fpr
             j_point = cutoff_value
 
+
+    print(cutoff_value)
     return j_point
 
 def get_threshold_for_sensitivity(inferred_probabilities: list, truth_labels: list, target_sensitivity):
@@ -40,13 +34,6 @@ def get_threshold_for_sensitivity(inferred_probabilities: list, truth_labels: li
     best_cutoff = 0.5
 
     for cutoff_value in thresholds:
-        inferred_labels = []
-
-        # for probability in inferred_probabilities:
-        #     if probability > cutoff_value:
-        #         inferred_labels.append(1)
-        #     else:
-        #         inferred_labels.append(0)
 
         sensitivity = calculate_sensitivity(inferred_probabilities, truth_labels,cutoff_value)
 
@@ -54,28 +41,20 @@ def get_threshold_for_sensitivity(inferred_probabilities: list, truth_labels: li
             best_cutoff = cutoff_value
             distance_to_target = abs(sensitivity-target_sensitivity)
 
-            print(f"{best_cutoff} cutoff for sensitivity: {sensitivity} and specificity: {calculate_specificity(inferred_probabilities, truth_labels, cutoff_value)}")
+            # print(f"{best_cutoff} cutoff for sensitivity: {sensitivity} and specificity: {calculate_specificity(inferred_probabilities, truth_labels, cutoff_value)}")
 
     return best_cutoff
 
 
 def calculate_roc_values(inferred_probabilities: list, truth_labels: list):
 
-    thresholds = ([1]+sorted(set(inferred_probabilities), reverse=True)+[-1])
+    thresholds = [1]+sorted(set(inferred_probabilities), reverse=True)+[-1]
 
     roc_coords = []
 
     for cutoff_value in thresholds:
-        inferred_labels = []
-
-        for probability in inferred_probabilities:
-            if probability > cutoff_value:
-                inferred_labels.append(1)
-            else:
-                inferred_labels.append(0)
-
-        tpr = calculate_true_positive_rate(inferred_labels, truth_labels, cutoff_value)
-        fpr = calculate_false_positive_rate(inferred_labels, truth_labels, cutoff_value)
+        tpr = calculate_true_positive_rate(inferred_probabilities, truth_labels, cutoff_value)
+        fpr = calculate_false_positive_rate(inferred_probabilities, truth_labels, cutoff_value)
 
         roc_coords.append([fpr, tpr])
 
@@ -86,7 +65,7 @@ def draw_roc_curve(inferred_probabilities: list, truth_labels: list, save_direct
     x = []
     y = []
     coordinates = calculate_roc_values(inferred_probabilities, truth_labels)
-    youdens_j_point = get_youdens_j_point(inferred_probabilities, truth_labels)
+    # youdens_j_point = get_youdens_j_point(inferred_probabilities, truth_labels)
 
     for coord in coordinates:
         x.append(coord[0])
@@ -97,7 +76,26 @@ def draw_roc_curve(inferred_probabilities: list, truth_labels: list, save_direct
     # plt.fill_between(x,y, alpha=0.4)
     plt.plot([0, 1], linestyle="dashed")
 
-    plt.axvline(youdens_j_point, linestyle="--")
+    j_point = get_youdens_j_point(
+        inferred_probabilities,
+        truth_labels
+    )
+
+    tpr = calculate_true_positive_rate(
+        inferred_probabilities,
+        truth_labels,
+        j_point
+    )
+
+    fpr = calculate_false_positive_rate(
+        inferred_probabilities,
+        truth_labels,
+        j_point
+    )
+
+    plt.scatter(fpr, tpr, color="red", zorder=5)
+
+    # plt.axvline(youdens_j_point, linestyle="--")
     plt.title("ROC CURVE")
     plt.xlabel("False positive rate")
     plt.ylabel("True positive rate")
