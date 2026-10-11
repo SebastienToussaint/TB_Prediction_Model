@@ -36,7 +36,7 @@ def rename_file_csv(file, csv_data, file_index, number_of_files):
     """
     Renames files while adjusting the given metadata structure (renames old names in metadata to new names)
     """
-    current_file_name = extract_filename_from_path(file.name, 1)
+    current_file_name = extract_filename_from_path(file.name, 0)
     if "." in file.name:
         file_extension = file.name[file.name.rindex("."):]
         new_filename = file.name[:file.name.rindex(".")]
@@ -63,7 +63,7 @@ def rename_file_csv(file, csv_data, file_index, number_of_files):
     # Update csv data
     for row in csv_data:
         if row[0].endswith(current_file_name):
-            row[0] = extract_filename_from_path(new_filename, 1)
+            row[0] = extract_filename_from_path(new_filename, 0)
             return
 
     print(f"No metadata found for {file.name}")

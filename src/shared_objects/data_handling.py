@@ -10,7 +10,7 @@ from utilities.directory_handling import verify_directory
 from math import ceil, floor
 import cv2
 import pickle
-from shared_objects import tta
+from shared_objects import augmentation
 import matplotlib.pyplot as plt
 
 
@@ -56,15 +56,14 @@ class DataStructure:
         """
         pixel_array = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
 
-        if pixel_array is None:
-            print(f"Could not load image at {image_path}.\n"
-                  f"Exiting...")
-            quit()
+        assert pixel_array is not None and pixel_array.ndim == 2
+        assert pixel_array.dtype == np.uint16, f"Unexpected dtype {pixel_array.dtype} at {image_path}"
 
-        if pixel_array.dtype == np.uint16:
-            pixel_array = pixel_array.astype(np.float32)
+        scale = 65535
 
-        pixel_array = torch.from_numpy(pixel_array)
+        pixel_array = pixel_array.astype(np.float32) / scale
+
+        pixel_array = torch.from_numpy(pixel_array).unsqueeze(0)
 
         return pixel_array
 
@@ -486,8 +485,8 @@ class DataStructure:
         del partitioned_data
 
     @staticmethod
-    def augment_data(dataloader, x_shift_range: list, y_shift_range: list, rotation_range: list):
-        # print("Augmenting dataloader...")
+    def augment_data(dataloader, x_shift_percentage_range: list, y_shift_percentage_range: list, rotation_range: list):
+        print("Augmenting dataloader...")
 
         data = []
         batch_size = 0
@@ -501,11 +500,9 @@ class DataStructure:
 
         del dataloader
 
-        data.extend(tta.augment_data_from_dataloader(data, x_shift_range, y_shift_range, rotation_range))
+        data.extend(augmentation.augment_data_from_dataloader(data, x_shift_percentage_range, y_shift_percentage_range, rotation_range))
 
         dataloader = DataLoader(CustomDataset(data), batch_size, True)
-
-
 
         return dataloader
 
@@ -519,10 +516,12 @@ class DataStructure:
             batch_labels = batch[1]
             batch_filepaths = batch[2]
 
-            batch_images = batch_images.unsqueeze(1)
-
             for j in range(len(batch_images)):
-                img = batch_images[j].squeeze()
+
+
+                img = batch_images[j].squeeze(0)
+
+
                 label = batch_labels[j]
                 plt.imshow(img, cmap="gray")
                 plt.title(f"Real: {label}\n"
@@ -533,15 +532,25 @@ class DataStructure:
 
 if __name__ == "__main__":
     d = DataStructure()
-    d.set_native_datapath("E:/Project/TESTING\Data/Dataloaders/SickVsTB_Large")
+    d.set_native_datapath("E:\Project\TESTING\Data\Dataloaders\Test_New_Encoder")
 
-    num = d.get_num_partitions()
+    dl = d.get_next_dataloader()
+    d.observe_dataloader(dl)
+    # d.augment_data(dl, [-0.1, 0.1], [-0.1, 0.1], [-15, 15])
 
-    start_time = time.time()
-    for i in range(num):
-        print(f"DL {i} of {num}")
+    # d.create_dataset(["E:\Project\data\ProcessedData\Shenzhen\TB"],
+    #                  1, 30, "E:\Project\TESTING\Data\Dataloaders\Test_New_Encoder")
 
-        dl = d.get_next_dataloader()
-        d.augment_data(dl, [-50, 50], [-50, 50], [-15, 15])
 
-    print(f"Time taken: {time.time() - start_time}")
+
+
+    # num = d.get_num_partitions()
+
+    # start_time = time.time()
+    # for i in range(num):
+    #     print(f"DL {i} of {num}")
+    #
+    #     dl = d.get_next_dataloader()
+    #     d.augment_data(dl, [-50, 50], [-50, 50], [-15, 15])
+    #
+    # print(f"Time taken: {time.time() - start_time}")

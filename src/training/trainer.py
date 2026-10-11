@@ -9,46 +9,31 @@ from pathlib import Path
 from utilities.directory_handling import verify_directory
 
 class Trainer:
-    def __init__(self, model: torch.nn.Module|None=None, data_structure:DataStructure|None=None):
-        self.data_structure = data_structure
-        self.model = model
+    def __init__(self):
+        pass
 
-    def train(self, number_of_epochs, model: torch.nn.Module|None=None, data_structure:DataStructure|None=None,
+    def train(self, number_of_epochs, model: torch.nn.Module, data_structure:DataStructure,
+              augments_per_image: int=0, augmentation_ranges=((-0.1, 0.1),(-0.1, 0.1), (-15, 15)),
               loss_function:str="BCE", optimizer:str="SGD", learning_rate:float|int=0.001, target_device:str="Any",
               number_of_evaluation_partitions:int =0, save_metrics=True, metrics_to_log=None):
 
         # Parameter Management
-        if not self.model and not model:
-            print("Error in trainer.train(): No Model loaded into trainer. Either set one via "
-                  "trainer.set_model() or provide one.")
+        if not model:
+            print("Error in trainer.train(): model is None")
             quit()
-        if not self.data_structure and not data_structure:
+        if not data_structure:
             print(
-                "Error in trainer.train(): No Data Structure loaded into trainer. Either set one via "
-                "trainer.set_data_structure() or provide one.")
-            quit()
-        if model and self.model:
-            print("Training will be done on provided model over native trainer model.")
-        elif self.model:
-            print("Training will be done on native trainer model.")
-            model = self.model
-        if data_structure and self.data_structure:
-            print("Training will be done with provided data handler over native trainer data structure.")
-        elif self.data_structure:
-            print("Training will be done on native trainer data structure.")
-            data_structure = self.data_structure
-
-        # Prevents warnings
-        if model is None or data_structure is None:
-            print("Error in trainer.train(), model or data_structure not set.")
+                "Error in trainer.train(): data_structure is None")
             quit()
 
         loss_fn = self._get_loss_fn(loss_function)
         optim = self._get_optimizer(optimizer, model, learning_rate)
         device = self._get_target_device(target_device)
 
-        run_training_loop(model, data_structure, number_of_epochs, loss_fn, optim, device, number_of_evaluation_partitions,
-                          save_metrics, metrics_to_log)
+        run_training_loop(model=model, data_structure=data_structure, augments_per_image=augments_per_image,
+                          augment_ranges=augmentation_ranges, number_of_epochs=number_of_epochs, loss_fn=loss_fn,
+                          optimizer=optim, target_device=device, num_evaluation_partitions=number_of_evaluation_partitions,
+                          save_probabilities_to_model=save_metrics, metrics_to_log=metrics_to_log)
 
     @staticmethod
     def _get_optimizer(name, model, lr):
@@ -270,6 +255,43 @@ class Trainer:
                     case "MODEL_SAVE_NAME":
                         model_save_name = line[line.index("=")+1:]
                         decoded_dict["model_save_name"] = model_save_name
+
+                    case "AUGMENTS_PER_IMAGE":
+                        augments_per_image = line[line.index("=")+1:]
+                        try:
+                            augments_per_image = int(augments_per_image)
+                            if augments_per_image < 0:
+                                raise ValueError
+                        except ValueError:
+                            print(
+                                "Error while decoding config file. augments_per_image needs to be a positive integer or 0")
+                            quit()
+
+                        decoded_dict["augments_per_image"] = augments_per_image
+
+                    case "AUGMENTATION_PERCENTAGE_RANGES":
+                        line = line[line.index("=")+1:]
+                        line = line.replace("[", "")
+                        line = line.replace("]", "")
+                        line = line.split(",")
+
+                        if not len(line) == 6:
+                            print("ERROR WITH ARRAY")
+                            quit()
+
+                        try:
+                            aug_ranges = [[float(line[0]), float(line[1])],
+                                          [float(line[2]), float(line[3])],
+                                          [float(line[4]), float(line[5])]]
+                        except ValueError:
+                            print(
+                                "Error while decoding config file. augmentation_ranges "
+                                "needs to be in form [[x1,x2],[y1,y2],[r1,r2]].\n"
+                                "Where x[0->1], y[0->1] and r are real values")
+                            quit()
+
+                        decoded_dict["augmentation_ranges"] = aug_ranges
+
 
                     case _:
                         print(f"Error while decoding config file. {line} is not valid.")

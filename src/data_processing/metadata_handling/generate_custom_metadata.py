@@ -15,7 +15,7 @@ def write_custom_csv(csv_file,  filepath, label, study_name, origin_country):
     """
     data_writer = csv.writer(csv_file)
 
-    corresponding_image_name = extract_filename_from_path(filepath, 1)
+    corresponding_image_name = extract_filename_from_path(filepath, 0)
     patient_sex = "unknown"
     patient_age = "unknown"
     tb_status = label

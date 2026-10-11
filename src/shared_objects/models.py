@@ -143,6 +143,27 @@ class CNN(nn.Module):
         )
         print("Succesfully created standard model.")
 
+    def create_simple(self):
+        """
+        Creates a standard CNN structure
+        """
+        self.layers = nn.Sequential(
+            nn.Conv2d(1, 8, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2),  # 80 -> 40
+
+            nn.Conv2d(8, 16, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2),  # 40 -> 20
+
+            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.AdaptiveAvgPool2d((1, 1)),
+            nn.Flatten(),
+            nn.Linear(32, 1)
+        )
+        print("Succesfully created simple model.")
+
     def calculate_batch_metrics(self, group_batches: int= 1):
 
 

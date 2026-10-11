@@ -3,7 +3,6 @@ import time
 import torch
 from pympler.asizeof import asizeof
 from torch import nn
-
 import utilities.string_manipulation
 from  shared_objects.data_handling import CustomDataset, DataStructure
 from evaluation_metrics import accuracy, core_metrics, diagnostic_odds_ratio, f1_score, fowlkes_mallows_index
@@ -15,12 +14,31 @@ from pathlib import Path
 import csv
 from utilities.array_handling import flatten_list
 import matplotlib.pyplot as plt
-import pympler.asizeof
 
 
-def write_evaluations(inferred_probabilities, truth_labels, cutoff_value, output_directory, round_values=4, _no_output=False):
+def write_evaluations(inferred_probabilities, truth_labels, cutoff_value, target_sensitivity,output_directory, round_values=4, _no_output=False):
 
     print("Calculating evaluation metrics...")
+
+    if target_sensitivity and cutoff_value:
+        print("WARNING in write_evaluations.\n"
+              "cutoff_value and target_sensitivity are both set. cutoff_value will be used.\n"
+              "If target_sensitivity should be used to calculate the cutoff, set cutoff value to None")
+        target_sensitivity = None
+    elif cutoff_value:
+        print(f"Using cutoff value of {cutoff_value}")
+    elif target_sensitivity:
+        print(f"Using target sensitivity of {target_sensitivity} to calculate threshold")
+    else:
+        print("ERROR in write_evaluations.\n"
+              "one of cutoff_value or target_sensitivity needs to be set.")
+        quit()
+
+    if target_sensitivity is not None:
+        cutoff_value = roc_curve.get_threshold_for_sensitivity(inferred_probabilities, truth_labels, target_sensitivity)
+    elif str(cutoff_value).upper() == "J":
+        cutoff_value = roc_curve.get_youdens_j_point(inferred_probabilities, truth_labels)
+
 
     if not _no_output:
         print(f"Base evaluation statistics:\n"
@@ -52,6 +70,8 @@ def write_evaluations(inferred_probabilities, truth_labels, cutoff_value, output
          round(core_metrics.calculate_precision(inferred_probabilities, truth_labels, cutoff_value), round_values)],
         ["PR-AUC:",
          round(pr_curve.calculate_pr_auc(inferred_probabilities, truth_labels), round_values)],
+        ["Cutoff:",
+         cutoff_value]
     ]
 
     if _no_output:
@@ -116,7 +136,6 @@ def run_bootstrap_evaluation(repetitions: int, model: nn.Module, ds: DataStructu
             for j in range(len(images)):
                 image_packages.append([images[j], labels[j], filepaths[j]])
 
-
     # Data and model to device
     for i in range(len(image_packages)):
         image_packages[i][0] = image_packages[i][0].to(device)
@@ -133,24 +152,36 @@ def run_bootstrap_evaluation(repetitions: int, model: nn.Module, ds: DataStructu
         for idx in selected_indices:
             inferred_data[i].append(infer_labels_cuda(model, image_packages[idx]))
 
-
     print(time.time() - time_1)
-
 
     time_1 = time.time()
     metrics = []
     # Get metrics
     for chunk in inferred_data:
-        metrics.append(write_evaluations([package[0] for package in chunk], [package[0] for package in chunk], "", 3, True))
+        metrics.append(
+            write_evaluations([package[0] for package in chunk], [package[1] for package in chunk], 0.5, "", 3, True))
 
     print(metrics)
     print(time.time() - time_1)
 
 
-def run_evaluation(model: nn.Module, ds: DataStructure, cutoff_value,output_directory, device: str = "cpu",
-                   metrics_decimal_places=4,_no_output=False):
+def run_evaluation(model: nn.Module, ds: DataStructure, cutoff_value, output_directory, device: str = "cpu",
+                    target_sensitivity=None, metrics_decimal_places=4,_no_output=False):
+    print(f"Running evaluation on model using {device}")
 
-    print(f"Running evaluation on model using {device} with cutoff value {cutoff_value}...")
+    if target_sensitivity and cutoff_value:
+        print("WARNING in run_evaluation.\n"
+              "cutoff_value and target_sensitivity are both set. cutoff_value will be used.\n"
+              "If target_sensitivity should be used to calculate the cutoff, set cutoff value to None")
+        target_sensitivity = None
+    elif cutoff_value:
+        print(f"Using cutoff value of {cutoff_value}")
+    elif target_sensitivity:
+        print(f"Using target sensitivity of {target_sensitivity} to calculate threshold")
+    else:
+        print("ERROR in run_evaluation.\n"
+              "one of cutoff_value or target_sensitivity needs to be set.")
+        quit()
 
     model.to(device)
     inferred_probs = []
@@ -180,6 +211,7 @@ def run_evaluation(model: nn.Module, ds: DataStructure, cutoff_value,output_dire
         write_evaluations(flatten_list(inferred_probs),
                           flatten_list(truth_labels),
                           cutoff_value,
+                          target_sensitivity,
                           output_directory,
                           metrics_decimal_places)
         return True
@@ -194,5 +226,5 @@ if __name__ == "__main__":
     datas = DataStructure()
 
     datas.set_native_datapath("E:\Project\TESTING\Data\Dataloaders\Test")
-    # run_bootstrap_evaluation(1, model, datas, "", "cuda")
+    run_bootstrap_evaluation(5, model, datas, "", "cuda")
     # run_evaluation()

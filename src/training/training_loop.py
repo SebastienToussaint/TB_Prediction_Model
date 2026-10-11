@@ -61,8 +61,8 @@ def log_metrics(epoch: int, metrics_to_log, train_loss, train_probs, train_label
 
 def update_model_image_scores(model, inferred_probs, truth_labels, image_paths, training: bool):
     correct_indices = []
-    correct_indices.extend(metric_counts.get_true_positives(inferred_probs, truth_labels)[1])
-    correct_indices.extend(metric_counts.get_true_negatives(inferred_probs, truth_labels)[1])
+    correct_indices.extend(metric_counts.get_true_positives(inferred_probs, truth_labels, 0.5)[1])
+    correct_indices.extend(metric_counts.get_true_negatives(inferred_probs, truth_labels, 0.5)[1])
 
     correct_paths = []
     incorrect_paths = []
@@ -88,7 +88,8 @@ def print_gpu_memory(prefix=""):
         f"peak={peak:.2f} GB"
     )
 
-def run_training_loop(model: nn.Module, data_structure: data_handling.DataStructure, number_of_epochs: int, loss_fn,
+def run_training_loop(model: nn.Module, data_structure: data_handling.DataStructure, augments_per_image: int,
+                      augment_ranges: list, number_of_epochs: int, loss_fn,
                       optimizer, target_device: str = "cpu", num_evaluation_partitions = 0,
                       save_probabilities_to_model = True, metrics_to_log:list|None = None):
 
@@ -101,6 +102,8 @@ def run_training_loop(model: nn.Module, data_structure: data_handling.DataStruct
           f" -Optimizer: {optimizer.__class__.__name__}\n"
           f" -Number of Partitions: {data_structure.get_num_partitions()}\n"
           f" -Number of partitions reserved for evaluation: {num_evaluation_partitions}\n"
+          f" -Augments per image: {augments_per_image}\n"
+          f" -Augment ranges: {augment_ranges}\n"
           f" -Save inferred probabilities to model: {save_probabilities_to_model}\n")
 
 
@@ -132,19 +135,19 @@ def run_training_loop(model: nn.Module, data_structure: data_handling.DataStruct
         for i in range(num_training_partitions):
             # Get the next chunk of data
             train_dataloader = data_structure.get_next_dataloader()
-            train_dataloader = data_structure.augment_data(train_dataloader, [-50, 50], [-50, 50], [-15, 15])
+            train_dataloader = data_structure.augment_data(train_dataloader, [-0.1, 0.1], [-0.1, 0.1], [-15, 15])
 
             for batch, (images, labels, filepaths) in enumerate(train_dataloader):
 
                 images, labels = images.to(target_device), labels.to(target_device)
 
                 # Infer labels
-                images = images.unsqueeze(1) # TODO: Need function to check if dims are correct (for model type) and update them on the fly
+                # images = images.unsqueeze(1)
 
                 optimizer.zero_grad(set_to_none=True)
 
                 with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-                    inferred_logits = model(images).squeeze()
+                    inferred_logits = model(images).squeeze(1)
                     batch_loss = loss_fn(inferred_logits, labels.float())
 
                 batch_loss.backward()
@@ -193,16 +196,19 @@ def run_training_loop(model: nn.Module, data_structure: data_handling.DataStruct
                         images, labels = images.to(target_device), labels.to(target_device)
 
                         # Infer labels
-                        images = images.unsqueeze(1) # TODO: Need function to check if dims are correct (for model type) and update them on the fly
-                        inferred_logits = model(images).squeeze()
-                        inferred_prediction_values = torch.sigmoid(inferred_logits) # Round these to get labels
+                        # images = images.unsqueeze(1) # TODO: Need function to check if dims are correct (for model type) and update them on the fly
+                        with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+                            inferred_logits = model(images).squeeze(1)
 
+                            batch_loss = loss_fn(inferred_logits, labels.float())
+
+                        inferred_prediction_values = torch.sigmoid(inferred_logits)  # Round these to get labels
                         # Save inferred probabilities and truth labels
                         testing_probs.append(inferred_prediction_values.detach().cpu().tolist())
                         testing_labels.append(labels.detach().cpu().tolist())
                         testing_filepaths.append(filepaths)
 
-                        total_test_loss += loss_fn(inferred_logits, labels.float()).item()
+                        total_test_loss += batch_loss.item()
                         test_batches_processed += 1
 
         # =========================================================================================

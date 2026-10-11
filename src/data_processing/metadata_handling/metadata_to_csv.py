@@ -15,7 +15,7 @@ def write_csv_montgomery(csv_file,  metadata_filepath, study_name):
 
     with open(metadata_filepath, "r") as metadata_file:
         corresponding_image_name = metadata_file.name
-        corresponding_image_name = extract_filename_from_path(corresponding_image_name, 1)
+        corresponding_image_name = extract_filename_from_path(corresponding_image_name, 1) + ".png"
 
         patient_sex_line = metadata_file.readline()
         patient_sex = patient_sex_line[patient_sex_line.rindex(":")+1:].strip()
@@ -45,7 +45,7 @@ def write_csv_shenzhen(csv_file,  metadata_filepath, study_name):
 
     with open(metadata_filepath, "r") as metadata_file:
         corresponding_image_name = metadata_file.name
-        corresponding_image_name = extract_filename_from_path(corresponding_image_name, 1)
+        corresponding_image_name = extract_filename_from_path(corresponding_image_name, 1) + ".png"
 
         patient_sex_age_line = metadata_file.readline()
         patient_sex = patient_sex_age_line[0:patient_sex_age_line.index(" ")]
@@ -85,7 +85,7 @@ verify_directory(target_directory, 0)
 # Verify save directory exists and create parent directories if needed
 if str(save_directory).endswith(".csv"):
     csv_path = save_directory.resolve()
-    base_directory = str(save_directory)[0:str(save_directory).index(extract_filename_from_path(str(save_directory), 1))]
+    base_directory = str(save_directory)[0:str(save_directory).index(extract_filename_from_path(str(save_directory), 0))]
     verify_directory(base_directory, 1)
 else:
     verify_directory(save_directory, 1)

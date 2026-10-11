@@ -34,10 +34,14 @@ if __name__ == "__main__":
                   "Cutoff value not provided after -co tag")
             quit()
         except ValueError:
-            print("ERROR while running evaluation: Incorrect arguments provided.\n"
-                  f"Incorrect cutoff value {sys.argv[sys.argv.index("-co") + 1]} given after -co tag.\n"
-                  f"Value needs to be between 0 and 1")
-            quit()
+            if sys.argv[sys.argv.index("-co") + 1].upper() != "J":
+                print("ERROR while running evaluation: Incorrect arguments provided.\n"
+                      f"Incorrect cutoff value {sys.argv[sys.argv.index("-co") + 1]} given after -co tag.\n"
+                      f"Value needs to be between 0 and 1 or 'j' for the cutoff to be set at youden's j point.")
+                quit()
+            else:
+                cutoff = "j"
+
     elif "-ts" in sys.argv:
         try:
             target_sensitivity = float(sys.argv[sys.argv.index("-ts") + 1])
@@ -53,12 +57,11 @@ if __name__ == "__main__":
                   f"Value needs to be between 0 and 1")
             quit()
 
-
-    # if target_sensitivity is not None:
-    #     print(f"TS: {target_sensitivity}")
-    # else:
-    #     print(f"Cutoff: {cutoff}")
-
+    elif len(sys.argv) > 4:
+        print("ERROR while running evaluation: Incorrect arguments provided.\n"
+              f"Unknown argument(s) given {sys.argv[4:]}.\n"
+              "Usage: python -m *.evaluate_model <path_to_model> <path_to_dataloaders> <output_directory> (OPTIONAL) -co <cutoff_value> -ts <target_sensitivity>")
+        quit()
 
     model = CNN()
     model.load(model_path)
@@ -66,4 +69,8 @@ if __name__ == "__main__":
     ds = DataStructure()
     ds.set_native_datapath(dataloaders_path)
 
-    run_evaluation(model, ds, cutoff, save_directory, "cuda" if torch.cuda.is_available() else "cpu")
+    if target_sensitivity is not None:
+        run_evaluation(model, ds, None, save_directory, "cuda" if torch.cuda.is_available() else "cpu",
+                       target_sensitivity)
+    else:
+        run_evaluation(model, ds, cutoff, save_directory, "cuda" if torch.cuda.is_available() else "cpu")

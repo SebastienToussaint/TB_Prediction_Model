@@ -23,14 +23,18 @@ if __name__ == "__main__":
     model = models.CNN()
 
     if config["model_path"] in ["", " "]:
-        model.create_standard(1, 64, 1)
+        # model.create_standard(1, 64, 1)
+        print("SIMPLE MODEL")
+        model.create_simple()
     else:
         model.load(config["model_path"])
 
     ds = DataStructure()
     ds.set_native_datapath(config["dataloaders_path"])
 
-    t.train(config["num_epochs"], model, ds, config["loss_function"], config["optimizer"], config["learning_rate"],
-            config["training_device"], config["evaluation_partitions"], config["save_metrics"], config["metrics_to_log"])
+    t.train(number_of_epochs=config["num_epochs"], model=model, data_structure=ds, loss_function=config["loss_function"],
+            optimizer=config["optimizer"], learning_rate=config["learning_rate"], target_device=config["training_device"],
+            number_of_evaluation_partitions=config["evaluation_partitions"], save_metrics=config["save_metrics"],
+            metrics_to_log=config["metrics_to_log"])
 
     model.save(model_save_directory, config["model_save_name"])

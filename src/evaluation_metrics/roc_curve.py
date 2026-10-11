@@ -18,7 +18,7 @@ def get_youdens_j_point(inferred_probabilities: list, truth_labels: list):
             j_point = cutoff_value
 
 
-    print(cutoff_value)
+    # print(cutoff_value)
     return j_point
 
 def get_threshold_for_sensitivity(inferred_probabilities: list, truth_labels: list, target_sensitivity):
@@ -65,7 +65,7 @@ def draw_roc_curve(inferred_probabilities: list, truth_labels: list, save_direct
     x = []
     y = []
     coordinates = calculate_roc_values(inferred_probabilities, truth_labels)
-    # youdens_j_point = get_youdens_j_point(inferred_probabilities, truth_labels)
+    youdens_j_point = get_youdens_j_point(inferred_probabilities, truth_labels)
 
     for coord in coordinates:
         x.append(coord[0])
@@ -76,26 +76,9 @@ def draw_roc_curve(inferred_probabilities: list, truth_labels: list, save_direct
     # plt.fill_between(x,y, alpha=0.4)
     plt.plot([0, 1], linestyle="dashed")
 
-    j_point = get_youdens_j_point(
-        inferred_probabilities,
-        truth_labels
-    )
 
-    tpr = calculate_true_positive_rate(
-        inferred_probabilities,
-        truth_labels,
-        j_point
-    )
 
-    fpr = calculate_false_positive_rate(
-        inferred_probabilities,
-        truth_labels,
-        j_point
-    )
-
-    plt.scatter(fpr, tpr, color="red", zorder=5)
-
-    # plt.axvline(youdens_j_point, linestyle="--")
+    plt.axvline(youdens_j_point, linestyle="--")
     plt.title("ROC CURVE")
     plt.xlabel("False positive rate")
     plt.ylabel("True positive rate")

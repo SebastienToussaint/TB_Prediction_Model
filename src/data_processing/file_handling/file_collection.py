@@ -62,7 +62,8 @@ def traverse_directory_and_copy(directory, save_directory, file_suffixes, index=
             continue
 
         # Recursively search and copy
-        traverse_directory_and_copy(new_directory, save_directory, file_suffixes, index, number_of_files, metadata_tracking, metadata)
+        index = traverse_directory_and_copy(new_directory, save_directory, file_suffixes, index, metadata_tracking, metadata, number_of_files)
+    return index
 
 
 def collect_files(target_directory, save_directory, metadata_filepath = None, file_suffixes = None):
