@@ -91,7 +91,8 @@ def print_gpu_memory(prefix=""):
 def run_training_loop(model: nn.Module, data_structure: data_handling.DataStructure, augments_per_image: int,
                       augment_ranges: list, number_of_epochs: int, loss_fn,
                       optimizer, target_device: str = "cpu", num_evaluation_partitions = 0,
-                      save_probabilities_to_model = True, metrics_to_log:list|None = None):
+                      model_save_interval=-1, interval_model_save_path="", save_probabilities_to_model = True,
+                      metrics_to_log:list|None = None):
 
     # Log training info
     print("Starting training loop...\n")
@@ -104,6 +105,7 @@ def run_training_loop(model: nn.Module, data_structure: data_handling.DataStruct
           f" -Number of partitions reserved for evaluation: {num_evaluation_partitions}\n"
           f" -Augments per image: {augments_per_image}\n"
           f" -Augment ranges: {augment_ranges}\n"
+          f" -Save interval: {model_save_interval}\n"
           f" -Save inferred probabilities to model: {save_probabilities_to_model}\n")
 
 
@@ -135,10 +137,14 @@ def run_training_loop(model: nn.Module, data_structure: data_handling.DataStruct
         for i in range(num_training_partitions):
             # Get the next chunk of data
             train_dataloader = data_structure.get_next_dataloader()
-            train_dataloader = data_structure.augment_data(train_dataloader, [-0.1, 0.1], [-0.1, 0.1], [-15, 15])
+            if augments_per_image > 0:
+                train_dataloader = data_structure.augment_data(train_dataloader,
+                                                               augments_per_image,
+                                                               augment_ranges[0],
+                                                               augment_ranges[1],
+                                                               augment_ranges[2])
 
             for batch, (images, labels, filepaths) in enumerate(train_dataloader):
-
                 images, labels = images.to(target_device), labels.to(target_device)
 
                 # Infer labels
@@ -237,3 +243,11 @@ def run_training_loop(model: nn.Module, data_structure: data_handling.DataStruct
         # Log all requested metrics as well as training and testing loss
         log_metrics(epoch, metrics_to_log, average_train_loss, flatten_list(training_probs), flatten_list(training_labels),
                     average_test_loss, flatten_list(testing_probs), flatten_list(testing_labels))
+
+
+        # Save the model
+        if epoch%model_save_interval==0 and model_save_interval>0 and epoch !=0:
+            model.save(interval_model_save_path, f"model_{epoch+1}.pkl")
+
+    model.save(interval_model_save_path, f"model_final.pkl")
+

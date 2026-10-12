@@ -1,12 +1,14 @@
 model_path=''                   # If left empty, will create model from scratch
-model_save_directory='E:\Project\QUALITYCONTROL\TB_PORTALS_ARTIFACTS\Model'
-model_save_name=tb_portals_qc_model.pkl
-dataloaders_path='E:\Project\TESTING\Data\Dataloaders\Test_New_Encoder'
+model_save_directory='E:\Project\Savefiles\Models\Initial_new_encoder_384'
+model_save_name=model_384.pkl
+dataloaders_path='E:\Project\data\Dataloaders\Initial_new_encoder_384'
 num_epochs=50
-evaluation_partitions=0         # How many dataloaders should be reserved for evaluation every epoch
+evaluation_partitions=5          # How many dataloaders should be reserved for evaluation every epoch
 loss_function=BCE
-optimizer=Adam                  # SGD, SGD-Momentum, ADAM, ADAMW, ADAFACTOR, RMSPROP
-learning_rate=0.0001             # Standard = 0.001
+optimizer=AdamW               # SGD, SGD-Momentum, ADAM, ADAMW, ADAFACTOR, RMSPROP
+learning_rate=0.001
+augments_per_image=1
+augmentation_percentage_ranges=[[-0.1,0.1],[-0.1,0.1],[-10,10]]
 training_device=Any             # Any, CUDA, CPU
 model_save_interval=5
 save_metrics=True               # True, False

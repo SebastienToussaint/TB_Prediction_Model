@@ -32,7 +32,7 @@ if template_type.upper() in ["TRAIN", "TRAINER", "TRAINING"]:
         "optimizer=Adam                # SGD, SGD-Momentum, ADAM, ADAMW, ADAFACTOR, RMSPROP\n",
         "learning_rate=0.001\n",
         "augments_per_image=0\n"
-        "augmentation_percentage_ranges=[[-0.1,0.1],[-0.1,0.1],[-15,15]]"
+        "augmentation_percentage_ranges=[[-0.1,0.1],[-0.1,0.1],[-15,15]]\n"
         "training_device=Any             # Any, CUDA, CPU\n",
         "model_save_interval=5\n",
         "save_metrics=True               # True, False\n",

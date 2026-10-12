@@ -15,7 +15,8 @@ class Trainer:
     def train(self, number_of_epochs, model: torch.nn.Module, data_structure:DataStructure,
               augments_per_image: int=0, augmentation_ranges=((-0.1, 0.1),(-0.1, 0.1), (-15, 15)),
               loss_function:str="BCE", optimizer:str="SGD", learning_rate:float|int=0.001, target_device:str="Any",
-              number_of_evaluation_partitions:int =0, save_metrics=True, metrics_to_log=None):
+              number_of_evaluation_partitions:int =0, model_save_interval=-1, interval_save_path="", save_metrics=True,
+              metrics_to_log=None):
 
         # Parameter Management
         if not model:
@@ -33,6 +34,7 @@ class Trainer:
         run_training_loop(model=model, data_structure=data_structure, augments_per_image=augments_per_image,
                           augment_ranges=augmentation_ranges, number_of_epochs=number_of_epochs, loss_fn=loss_fn,
                           optimizer=optim, target_device=device, num_evaluation_partitions=number_of_evaluation_partitions,
+                          model_save_interval=model_save_interval, interval_model_save_path=interval_save_path,
                           save_probabilities_to_model=save_metrics, metrics_to_log=metrics_to_log)
 
     @staticmethod
@@ -173,10 +175,10 @@ class Trainer:
                         model_save_interval = line[line.index("=")+1:]
                         try:
                             model_save_interval = int(model_save_interval)
-                            if model_save_interval<0:
+                            if model_save_interval<-1:
                                 raise ValueError
                         except ValueError:
-                            print("Error while decoding config file. model_save_interval needs to be a positive integer or 0")
+                            print("Error while decoding config file. model_save_interval needs to be a positive integer or 0,-1")
                             quit()
 
                         decoded_dict["model_save_interval"] = model_save_interval

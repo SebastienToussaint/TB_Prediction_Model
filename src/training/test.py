@@ -25,17 +25,10 @@
 # cv2.waitKey(0)
 # cv2.destroyAllWindows()
 
-a = "[[-0.1,0.1],[-0.2,0.2],[-0.15,]]"
-a = a.replace("[", "")
-a = a.replace("]", "")
+a = 100
 
-a = a.split(",")
+b = -1
 
-if not len(a) == 6:
-    print("ERROR WITH ARRAY")
-    quit()
-
-b = [[float(a[0]), float(a[1])], [float(a[2]), float(a[3])], [float(a[4]), float(a[5])]]
-
-
-print(b)
+for i in range(a):
+    if i%b==0 and i!=0 and b != -1:
+        print(i)

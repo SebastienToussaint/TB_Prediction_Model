@@ -17,9 +17,10 @@ def get_random_value_normal(mean, lower_bound, upper_bound, standard_deviation):
     """
     Generate a random value on a normal distribution curve between given bounds
     """
-    lower_bound /= standard_deviation
-    upper_bound /= standard_deviation
-    return int(truncnorm.rvs(lower_bound, upper_bound, mean, standard_deviation, 1)[0])
+    while True:
+        value = np.random.normal(mean, standard_deviation)
+        if lower_bound <= value <= upper_bound:
+            return value
 
 
 def translate_image(img: cv2.typing.MatLike, x_shift_range, y_shift_range):
@@ -28,15 +29,15 @@ def translate_image(img: cv2.typing.MatLike, x_shift_range, y_shift_range):
     :return: Translated Image
     """
     # Choose a random x and y amounts to shift the image
-    x_shift = get_random_value_normal(mean=(x_shift_range[0] + x_shift_range[1]) / 2,
-                                                   lower_bound=x_shift_range[0],
-                                                   upper_bound=x_shift_range[1],
-                                                   standard_deviation=max(x_shift_range) / 2)
+    x_shift = get_random_value_normal(mean=(x_shift_range[0]+x_shift_range[1])/2,
+                                      lower_bound=x_shift_range[0],
+                                      upper_bound=x_shift_range[1],
+                                      standard_deviation=(x_shift_range[1]-x_shift_range[0])/4)
 
     y_shift = get_random_value_normal(mean=(y_shift_range[0] + y_shift_range[1]) / 2,
-                                                   lower_bound=y_shift_range[0],
-                                                   upper_bound=y_shift_range[1],
-                                                   standard_deviation=max(y_shift_range) / 2)
+                                      lower_bound=y_shift_range[0],
+                                      upper_bound=y_shift_range[1],
+                                      standard_deviation=(y_shift_range[1] - y_shift_range[0]) / 4)
 
     # Set up shift matrix
     shift_matrix = np.float32([[1, 0, int(x_shift)],
@@ -126,23 +127,23 @@ def transform_pixel_array_affine(batch, x_shift_percentage_range: list, y_shift_
     x_shift_range = [x_shift_percentage_range[0]*len(batch[0][0][0]), x_shift_percentage_range[1]*len(batch[0][0][0])]
     y_shift_range = [y_shift_percentage_range[0]*len(batch[0][0]), y_shift_percentage_range[1]*len(batch[0][0])]
 
-    cv2.imshow("1", batch[0].numpy().squeeze(0))
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # cv2.imshow("1", batch[0].numpy().squeeze(0))
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
     # Translation
     img = translate_image(batch[0][0].numpy(), x_shift_range, y_shift_range)
     # Rotation
     img = rotate_image(img, rotation_range)
 
-    cv2.imshow("2", img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # cv2.imshow("2", img)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
     return [torch.Tensor(img).unsqueeze(0), batch[1], "_-_TRANSFORMED_-_" + batch[2]]
 
 
-def augment_data_from_dataloader(initial_data, x_shift_percentage_range: list, y_shift_percentage_range: list,rotation_range: list):
+def augment_data_from_dataloader(initial_data, num_augments, x_shift_percentage_range: list, y_shift_percentage_range: list,rotation_range: list):
     data = []
 
     # worker_count = 2
@@ -159,10 +160,11 @@ def augment_data_from_dataloader(initial_data, x_shift_percentage_range: list, y
     #         augmented_data = list(executor.map(tpa_a_partial, initial_data))
 
     for batch in initial_data:
-        data.append(transform_pixel_array_affine(batch,
-                                    x_shift_percentage_range=x_shift_percentage_range,
-                                    y_shift_percentage_range=y_shift_percentage_range,
-                                    rotation_range=rotation_range))
+        for k in range(num_augments):
+            data.append(transform_pixel_array_affine(batch,
+                        x_shift_percentage_range=x_shift_percentage_range,
+                        y_shift_percentage_range=y_shift_percentage_range,
+                        rotation_range=rotation_range))
 
     return data
 

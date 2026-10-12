@@ -485,8 +485,9 @@ class DataStructure:
         del partitioned_data
 
     @staticmethod
-    def augment_data(dataloader, x_shift_percentage_range: list, y_shift_percentage_range: list, rotation_range: list):
-        print("Augmenting dataloader...")
+    def augment_data(dataloader, augments_per_image,x_shift_percentage_range: list,
+                     y_shift_percentage_range: list, rotation_range: list):
+        # print("Augmenting dataloader...")
 
         data = []
         batch_size = 0
@@ -500,7 +501,8 @@ class DataStructure:
 
         del dataloader
 
-        data.extend(augmentation.augment_data_from_dataloader(data, x_shift_percentage_range, y_shift_percentage_range, rotation_range))
+        data.extend(augmentation.augment_data_from_dataloader(data, augments_per_image,x_shift_percentage_range,
+                                                              y_shift_percentage_range, rotation_range))
 
         dataloader = DataLoader(CustomDataset(data), batch_size, True)
 
@@ -532,14 +534,17 @@ class DataStructure:
 
 if __name__ == "__main__":
     d = DataStructure()
-    d.set_native_datapath("E:\Project\TESTING\Data\Dataloaders\Test_New_Encoder")
+    # d.set_native_datapath("E:\Project\TESTING\Data\Dataloaders\Test_New_Encoder")
+    #
+    # dl = d.get_next_dataloader()
+    # d.observe_dataloader(dl)
+    # # d.augment_data(dl, [-0.1, 0.1], [-0.1, 0.1], [-15, 15])
 
-    dl = d.get_next_dataloader()
-    d.observe_dataloader(dl)
-    # d.augment_data(dl, [-0.1, 0.1], [-0.1, 0.1], [-15, 15])
-
-    # d.create_dataset(["E:\Project\data\ProcessedData\Shenzhen\TB"],
-    #                  1, 30, "E:\Project\TESTING\Data\Dataloaders\Test_New_Encoder")
+    d.create_dataset(["E:\Project\data\Smaller_Processed_Data\Morton", "E:\Project\data\Smaller_Processed_Data\Shenzhen",
+                      "E:\Project\data\Smaller_Processed_Data\TBX11K\TB", "E:\Project\data\Smaller_Processed_Data\TBX11K\Sick_non_TB",
+                      "E:\Project\data\Smaller_Processed_Data\MP"],
+                     40, 36, "E:\Project\data\Dataloaders\Initial_new_encoder_384",
+                     negative_split_percentage=0.65)
 
 
 
