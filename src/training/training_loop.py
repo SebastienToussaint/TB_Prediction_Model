@@ -1,5 +1,6 @@
 import time
 
+import cv2
 from pympler.asizeof import asizeof, asized
 import torch
 from torch import nn
@@ -7,6 +8,7 @@ from shared_objects import data_handling
 from evaluation_metrics import accuracy, mcc, f1_score, core_metrics
 from utilities.array_handling import flatten_list
 from evaluation_metrics import metric_counts
+import matplotlib.pyplot as plt
 
 def log_metrics(epoch: int, metrics_to_log, train_loss, train_probs, train_labels,
                 test_loss = None, test_probs = None, test_labels = None):
@@ -147,6 +149,9 @@ def run_training_loop(model: nn.Module, data_structure: data_handling.DataStruct
             for batch, (images, labels, filepaths) in enumerate(train_dataloader):
                 images, labels = images.to(target_device), labels.to(target_device)
 
+
+                # plt.imshow(images[0].squeeze(0).cpu().numpy(), cmap="gray")
+                # plt.show()
                 # Infer labels
                 # images = images.unsqueeze(1)
 
@@ -160,6 +165,7 @@ def run_training_loop(model: nn.Module, data_structure: data_handling.DataStruct
 
                 optimizer.step()
 
+                # print(batch_loss.item())
                 total_train_loss += batch_loss.item()
                 train_batches_processed += 1
 

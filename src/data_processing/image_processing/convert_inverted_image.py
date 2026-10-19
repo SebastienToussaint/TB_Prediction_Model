@@ -39,7 +39,12 @@ if __name__ == "__main__":
     for path in path_to_images.iterdir():
         print(f"Processing {path}")
         img = cv2.imread(path, cv2.IMREAD_UNCHANGED)
+        img = resize_image(img, 512, 512)
         img = torch.from_numpy(img).float()
+
+
+
+
         img = img.unsqueeze(0).unsqueeze(0)
 
         img = img.to("cuda")
@@ -67,7 +72,4 @@ if __name__ == "__main__":
 
     print("Inverting images...")
     for path in bad_images:
-        cv2.imshow("C", invert_image(cv2.imread(path, cv2.IMREAD_UNCHANGED)))
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-        # cv2.imwrite(path, invert_image(cv2.imread(path, cv2.IMREAD_UNCHANGED)), [cv2.IMWRITE_PNG_COMPRESSION, 0])
+        cv2.imwrite(path, invert_image(cv2.imread(path, cv2.IMREAD_UNCHANGED)), [cv2.IMWRITE_PNG_COMPRESSION, 0])

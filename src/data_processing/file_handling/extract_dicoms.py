@@ -10,6 +10,23 @@ import os
 from functools import partial
 
 
+def downscale_image_no_padding(img, max_width, max_height):
+    height, width = img.shape[:2]
+
+    # Determine largest rescale factor that keeps aspect ratio
+    rescale_factor = min(max_width / width, max_height / height)
+
+    final_width = int(width * rescale_factor)
+    final_height = int(height * rescale_factor)
+
+    if rescale_factor >= 1:
+        return img
+
+    img = cv2.resize(img, [final_width, final_height], interpolation=cv2.INTER_AREA)
+
+    return img
+
+
 def extract_and_save_image(filepath, save_directory):
     """
     Extracts the image from the dicom file at the given path.
@@ -18,31 +35,23 @@ def extract_and_save_image(filepath, save_directory):
     """
     dcm_file = pydicom.dcmread(filepath)
 
-    image = dcm_file.pixel_array.astype(np.uint16)
+    image = dcm_file.pixel_array.astype(np.float32)
 
-    if dcm_file.get("BitsStored") and dcm_file.get("PhotometricInterpretation"):
+    low = float(image.min())
+    high = float(image.max())
 
-        # Get the maximum possible value in the pixel array
-        max_value = (1 << dcm_file.BitsStored) - 1
 
-        # Invert pixel state if needed
-        if dcm_file.PhotometricInterpretation.upper() == "MONOCHROME1":
-            image = max_value - image
+    # Invert pixel state if needed
+    if str(dcm_file.get("PhotometricInterpretation", "")).upper() == "MONOCHROME1":
+        image = (high + low) - image
 
-        # Standardize to uint16 range
-        image = image.astype(np.float32)
-        image = image / max_value * 65535.0
 
-    else:
-        # Attempt to standardize pixel range to uint16 by using max found pixel value
-        print(f"Could not find BitsStored or PhotometricInterpretation parameter for dcm file {filepath}\n"
-              f"Using default pixel array with scaling based on maximum brightness in pixel array")
-
-        image = image.astype(np.float32)
-        image = image / image.max() * 65535.0
+    image = np.clip((image - low) / (high - low)*65535.0, 0, 65535)
 
     # Convert from float32 to uint16
     image = np.round(image).astype(np.uint16)
+
+    image = downscale_image_no_padding(image, 1000, 1000)
 
     # Save the image
     save_path = str(save_directory) + "/" + extract_filename_from_path(filepath, 1) + ".png"
@@ -77,6 +86,9 @@ if __name__ == "__main__":
         save_directory=f"{extraction_directory}",
     )
 
+
+    # for path in dicom_paths:
+    #     extract_and_save_image(path, "")
     worker_count = os.cpu_count() or 1
     print(f"Using {worker_count} workers.")
 

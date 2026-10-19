@@ -14,7 +14,8 @@ if __name__ == "__main__":
     t = Trainer()
 
     model_0 = models.CNN()
-    model_0.load(sys.argv[1])
+    model_0.create_standard(1, 64, 1)
+    # model_0.load(sys.argv[1])
 
     ds = DataStructure()
     ds.set_native_datapath(sys.argv[2])

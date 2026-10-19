@@ -6,7 +6,8 @@ from pathlib import Path
 from utilities.directory_handling import verify_directory
 import sys
 
-def normalize_range(img, percentile_min=0.1, percentile_max=99.9):
+def normalize_range(img, percentile_min=0.5, percentile_max=99.5):
+
         img = img.astype(np.uint16)
 
         assert img.dtype == np.uint16

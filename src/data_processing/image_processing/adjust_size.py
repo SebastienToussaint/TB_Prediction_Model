@@ -1,3 +1,4 @@
+
 from pathlib import Path
 import cv2
 import sys
@@ -11,6 +12,9 @@ def resize_image(img, target_width, target_height):
 
     height, width = img.shape[:2]
 
+    if height == target_height and width == target_width:
+        return img
+
     # Determine largest rescale factor that keeps aspect ratio
     rescale_factor = min(target_width/width, target_height/height)
 
@@ -18,7 +22,7 @@ def resize_image(img, target_width, target_height):
     final_height = int(height * rescale_factor)
 
     if 1 > rescale_factor:
-        interpolation_strategy = cv2.INTER_AREA # TODO: Check if these are correct
+        interpolation_strategy = cv2.INTER_AREA
     else:
         interpolation_strategy = cv2.INTER_LANCZOS4
 
@@ -38,6 +42,27 @@ def resize_image(img, target_width, target_height):
                                cv2.BORDER_CONSTANT, value=0)
 
     return img
+
+
+def _external_call_resize_images(images_directory, target_width, target_height):
+    # Standardize images in target directory
+    for f in Path(images_directory).iterdir():
+        if not f.name.endswith(".png"):
+            print(f"Non png file found at {f}")
+            continue
+
+        print(f"Processing {f}...")
+
+        img = cv2.imread(f, cv2.IMREAD_UNCHANGED)
+        if len(img.shape) == 3:
+            img = cv2.imread(f, cv2.IMREAD_GRAYSCALE)
+
+        img = resize_image(img, target_width, target_height)
+
+        cv2.imwrite(f, img, (cv2.IMWRITE_PNG_COMPRESSION, 0))
+
+    print("Done.")
+
 
 if __name__ == "__main__":
     # Argument Management

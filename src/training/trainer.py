@@ -47,7 +47,7 @@ class Trainer:
             case "ADAM":
                 return torch.optim.Adam(params=model.parameters(), lr=lr)
             case "ADAMW":
-                return torch.optim.AdamW(params=model.parameters(), lr=lr)
+                return torch.optim.AdamW(params=model.parameters(), lr=lr )
             case "ADAFACTOR":
                 return torch.optim.Adafactor(params=model.parameters(), lr=lr)
             case "RMSPROP":
@@ -120,7 +120,7 @@ class Trainer:
                     batch_images = batch_images.to("cpu")
                     batch_labels = batch_labels.to("cpu")
 
-                    batch_images = batch_images.unsqueeze(1)
+                    # batch_images = batch_images.unsqueeze(1)
 
                     predicted_labels = torch.round(torch.sigmoid(model(batch_images)))
 
@@ -167,6 +167,10 @@ class Trainer:
                         model_path = line[line.index("=")+1:]
                         model_path = model_path.replace("'", "").replace('"', "")
                         decoded_dict["model_path"] = model_path
+                    case "MODEL_TEMPLATE_PATH":
+                        model_template_path = line[line.index("=") + 1:]
+                        model_template_path = model_template_path.replace("'", "").replace('"', "")
+                        decoded_dict["model_template_path"] = model_template_path
                     case "MODEL_SAVE_DIRECTORY":
                         model_save_directory = line[line.index("=")+1:]
                         model_save_directory = model_save_directory.replace("'", "").replace('"', "")
@@ -186,7 +190,7 @@ class Trainer:
                         make_charts = line[line.index("=")+1:]
                         if make_charts.upper() == "TRUE":
                             make_charts = True
-                        elif make_charts.upper() == "False":
+                        elif make_charts.upper() == "FALSE":
                             make_charts = False
                         else:
                             print("Error while decoding config file. make_charts needs to be True or False")

@@ -6,10 +6,11 @@ from pympler.asizeof import asizeof
 from torch import nn
 from utilities.directory_handling import verify_directory
 from evaluation_metrics import accuracy, core_metrics, diagnostic_odds_ratio, f1_score, fowlkes_mallows_index
-from evaluation_metrics import informedness, jaccard_index, markedness, mcc, prevalence_threshold
+from evaluation_metrics import informedness, jaccard_index, markedness, mcc, prevalence_threshold, roc_curve
 import matplotlib.pyplot as plt
 from pathlib import Path
 import numpy as np
+from utilities.array_handling import flatten_list
 
 class CNN(nn.Module):
     def __init__(self):
@@ -111,7 +112,6 @@ class CNN(nn.Module):
 
         return save_directory
 
-
     def print_layer_stack(self):
         for layer in self.layers:
             print(layer)
@@ -164,11 +164,15 @@ class CNN(nn.Module):
         )
         print("Succesfully created simple model.")
 
+
+    def set_layers(self, layer_stack):
+        self.layers = layer_stack
+        print("Successfully set layer stack.")
+
     def calculate_batch_metrics(self, group_batches: int= 1):
 
 
-        metrics = ["Accuracy", "Balanced Accuracy", "Sensitivity", "Specificity", "Precision", "DOR", "F1", "Fowlkes Mallows Index",
-                   "Informedness", "Jaccard Index", "Markedness", "MCC", "Prevalence Threshold"]
+        metrics = ["Accuracy", "Balanced Accuracy", "Sensitivity", "Specificity", "Precision", "F1", "MCC", "AUC"]
 
         training_evaluations = {}
         testing_evaluations = {}
@@ -180,96 +184,63 @@ class CNN(nn.Module):
                 testing_evaluations[metric] = []
 
         for epoch, epoch_probabilities in enumerate(self.train_prediction_probabilities):
-            for batch_num, batch_probabilities in enumerate(epoch_probabilities):
-                training_evaluations["Accuracy"].append(accuracy.calculate_accuracy(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
+            training_evaluations["Accuracy"].append(accuracy.calculate_accuracy(flatten_list(epoch_probabilities), flatten_list(self.train_truth_labels[epoch])))
 
-                training_evaluations["Balanced Accuracy"].append(
-                    accuracy.calculate_balanced_accuracy(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
+            training_evaluations["Balanced Accuracy"].append(
+                accuracy.calculate_balanced_accuracy(flatten_list(epoch_probabilities), flatten_list(self.train_truth_labels[epoch])))
 
-                training_evaluations["Sensitivity"].append(
-                    core_metrics.calculate_sensitivity(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
+            training_evaluations["Sensitivity"].append(
+                core_metrics.calculate_sensitivity(flatten_list(epoch_probabilities), flatten_list(self.train_truth_labels[epoch])))
 
-                training_evaluations["Specificity"].append(
-                    core_metrics.calculate_specificity(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
+            training_evaluations["Specificity"].append(
+                core_metrics.calculate_specificity(flatten_list(epoch_probabilities), flatten_list(self.train_truth_labels[epoch])))
 
-                training_evaluations["Precision"].append(
-                    core_metrics.calculate_precision(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
+            training_evaluations["Precision"].append(
+                core_metrics.calculate_precision(flatten_list(epoch_probabilities), flatten_list(self.train_truth_labels[epoch])))
 
-                training_evaluations["DOR"].append(
-                    diagnostic_odds_ratio.calculate_diagnostic_odds_ratio(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
+            training_evaluations["F1"].append(
+                f1_score.calculate_f1_score(flatten_list(epoch_probabilities), flatten_list(self.train_truth_labels[epoch])))
 
-                training_evaluations["F1"].append(
-                    f1_score.calculate_f1_score(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
+            training_evaluations["MCC"].append(
+                mcc.calculate_matthews_correlation_coefficient(flatten_list(epoch_probabilities), flatten_list(self.train_truth_labels[epoch])))
 
-                training_evaluations["Fowlkes Mallows Index"].append(
-                    fowlkes_mallows_index.calculate_fowlkes_mallows_index(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
-
-                training_evaluations["Informedness"].append(
-                    informedness.calculate_informedness(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
-
-                training_evaluations["Jaccard Index"].append(
-                    jaccard_index.calculate_jaccard_index(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
-
-                training_evaluations["Markedness"].append(
-                    markedness.calculate_markedness(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
-
-                training_evaluations["MCC"].append(
-                    mcc.calculate_matthews_correlation_coefficient(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
-
-                training_evaluations["Prevalence Threshold"].append(
-                    prevalence_threshold.calculate_prevalence_threshold(batch_probabilities, self.train_truth_labels[epoch][batch_num]))
+            training_evaluations["AUC"].append(
+                roc_curve.calculate_roc_auc(flatten_list(epoch_probabilities), flatten_list(self.train_truth_labels[epoch]))
+            )
 
         for epoch, epoch_probabilities in enumerate(self.test_prediction_probabilities):
-            for batch_num, batch_probabilities in enumerate(epoch_probabilities):
-                testing_evaluations["Accuracy"].append(accuracy.calculate_accuracy(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
 
-                testing_evaluations["Balanced Accuracy"].append(
-                    accuracy.calculate_balanced_accuracy(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
+            testing_evaluations["Accuracy"].append(accuracy.calculate_accuracy(flatten_list(epoch_probabilities), flatten_list(self.test_truth_labels[epoch])))
 
-                testing_evaluations["Sensitivity"].append(
-                    core_metrics.calculate_sensitivity(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
+            testing_evaluations["Balanced Accuracy"].append(
+                accuracy.calculate_balanced_accuracy(flatten_list(epoch_probabilities), flatten_list(self.test_truth_labels[epoch])))
 
-                testing_evaluations["Specificity"].append(
-                    core_metrics.calculate_specificity(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
+            testing_evaluations["Sensitivity"].append(
+                core_metrics.calculate_sensitivity(flatten_list(epoch_probabilities), flatten_list(self.test_truth_labels[epoch])))
 
-                testing_evaluations["Precision"].append(
-                    core_metrics.calculate_precision(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
+            testing_evaluations["Specificity"].append(
+                core_metrics.calculate_specificity(flatten_list(epoch_probabilities), flatten_list(self.test_truth_labels[epoch])))
 
-                testing_evaluations["DOR"].append(
-                    diagnostic_odds_ratio.calculate_diagnostic_odds_ratio(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
+            testing_evaluations["Precision"].append(
+                core_metrics.calculate_precision(flatten_list(epoch_probabilities), flatten_list(self.test_truth_labels[epoch])))
 
-                testing_evaluations["F1"].append(
-                    f1_score.calculate_f1_score(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
+            testing_evaluations["F1"].append(
+                f1_score.calculate_f1_score(flatten_list(epoch_probabilities), flatten_list(self.test_truth_labels[epoch])))
 
-                testing_evaluations["Fowlkes Mallows Index"].append(
-                    fowlkes_mallows_index.calculate_fowlkes_mallows_index(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
+            testing_evaluations["MCC"].append(
+                mcc.calculate_matthews_correlation_coefficient(flatten_list(epoch_probabilities), flatten_list(self.test_truth_labels[epoch])))
 
-                testing_evaluations["Informedness"].append(
-                    informedness.calculate_informedness(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
+            testing_evaluations["AUC"].append(
+                roc_curve.calculate_roc_auc(flatten_list(epoch_probabilities), flatten_list(self.test_truth_labels[epoch]))
+            )
 
-                testing_evaluations["Jaccard Index"].append(
-                    jaccard_index.calculate_jaccard_index(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
-
-                testing_evaluations["Markedness"].append(
-                    markedness.calculate_markedness(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
-
-                testing_evaluations["MCC"].append(
-                    mcc.calculate_matthews_correlation_coefficient(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
-
-                testing_evaluations["Prevalence Threshold"].append(
-                    prevalence_threshold.calculate_prevalence_threshold(batch_probabilities, self.test_truth_labels[epoch][batch_num]))
 
         return training_evaluations, testing_evaluations
 
     def draw_eval_graphs(self, save_directory:str|Path, window_size: int = None,
                          group_batches: int = 1):
 
-
-
-        metrics = ["Accuracy", "Balanced Accuracy", "Sensitivity", "Specificity", "Precision", "DOR", "F1",
-                   "Fowlkes Mallows Index",
-                   "Informedness", "Jaccard Index", "Markedness", "MCC", "Prevalence Threshold"]
-
+        metrics = ["Accuracy", "Balanced Accuracy", "Sensitivity", "Specificity", "Precision", "F1", "MCC", "AUC"]
 
 
         training_evaluations, testing_evaluations = self.calculate_batch_metrics(group_batches)
@@ -294,8 +265,9 @@ class CNN(nn.Module):
                      label="Smoothed")
 
             # plt.title(f"{metric} change over batches")
-            plt.xlabel("Batch Number")
-            plt.ylabel(metric)
+            plt.xlabel("Epoch")
+            plt.ylabel("Training " + metric)
+            plt.ylim(bottom=0, top=1)
             plt.legend()
             plt.savefig(str(Path(str(save_directory)).resolve()) + "/training_" + metric.replace(" ", "_") + ".svg", format="svg")
             plt.close()
@@ -309,15 +281,16 @@ class CNN(nn.Module):
                 window = window_size
 
             for metric in metrics:
-                plt.plot(testing_evaluations[metric], alpha=0.2, label="Raw")
+                plt.plot(testing_evaluations[metric], alpha=0.2, label="Raw", )
                 plt.plot(range(window - 1, len(testing_evaluations[metric])),
                          np.convolve(testing_evaluations[metric], np.ones(window) / window, mode="valid"),
                          linewidth=2,
                          label="Smoothed")
 
                 # plt.title(f"{metric} change over batches")
-                plt.xlabel("Batch number")
-                plt.ylabel(metric)
+                plt.xlabel("Epoch")
+                plt.ylabel("Testing " + metric)
+                plt.ylim(bottom=0, top=1)
                 plt.legend()
                 plt.savefig(str(Path(str(save_directory)).resolve()) + "/testing_" + metric.replace(" ", "_") + ".svg", format="svg")
                 plt.close()
@@ -352,6 +325,8 @@ class CNN(nn.Module):
 
 if __name__ == "__main__":
     m = CNN()
-    m.load("E:\Project\Savefiles\Models\Retrained_model\model_SickVsTB_retrained.pkl")
-    m.draw_eval_graphs("E:\Project\Savefiles\Models\Retrained_model/Metrics")
+    m.load("E:\Project\TESTING\SEGMENTATION_TESTING\model/model_87.pkl")
+    # m.create_standard(1, 64, 1)
+    # m.print_layer_stack()
+    m.draw_eval_graphs("E:\Project\TESTING\SEGMENTATION_TESTING\model/Metrics")
     # m.output_image_scores("/home/sebastien/Project/SaveFiles/Models/SickVsTB/")

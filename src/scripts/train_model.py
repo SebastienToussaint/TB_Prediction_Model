@@ -5,6 +5,8 @@ from utilities.directory_handling import verify_directory
 from shared_objects import models
 from shared_objects.data_handling import DataStructure, CustomDataset
 from pathlib import Path
+from utilities.decode_model_template import generate_sequential_stack_from_template
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
@@ -28,11 +30,15 @@ if __name__ == "__main__":
     model = models.CNN()
 
     if config["model_path"] in ["", " "]:
-        model.create_standard(1, 64, 1)
-        # print("SIMPLE MODEL")
-        # model.create_simple()
+        if config["model_template_path"]:
+            model.set_layers(generate_sequential_stack_from_template(config["model_template_path"]))
+        else:
+            model.create_standard(1, 64, 1)
     else:
         model.load(config["model_path"])
+
+
+    model.print_layer_stack()
 
     ds = DataStructure()
     ds.set_native_datapath(config["dataloaders_path"])
@@ -47,3 +53,6 @@ if __name__ == "__main__":
             metrics_to_log=config["metrics_to_log"])
 
     model.save(model_save_directory, config["model_save_name"])
+
+    if config["make_charts"]:
+        model.draw_eval_graphs(str(model_save_directory)+"/metrics/")

@@ -3,7 +3,6 @@ import sys
 from pathlib import Path
 import torch
 from data_processing.image_processing.adjust_size import resize_image
-from data_processing.image_processing.adjust_contrast import normalize_range, transform_contrast_sigmoid
 import cv2
 import numpy as np
 from shared_objects import models
@@ -15,7 +14,6 @@ if __name__ == "__main__":
     path_to_model = sys.argv[1]
     path_to_images = Path(sys.argv[2]).resolve()
 
-    good_images = []
     bad_images = []
 
     model = models.CNN()
@@ -26,6 +24,9 @@ if __name__ == "__main__":
     for path in path_to_images.iterdir():
         print(f"Processing {path}")
         img = resize_image(cv2.imread(path, cv2.IMREAD_UNCHANGED), 80, 80)
+
+        img = img.astype(np.float32)/65535
+
         img = torch.from_numpy(img).float()
         img = img.unsqueeze(0).unsqueeze(0)
 

@@ -519,10 +519,7 @@ class DataStructure:
             batch_filepaths = batch[2]
 
             for j in range(len(batch_images)):
-
-
                 img = batch_images[j].squeeze(0)
-
 
                 label = batch_labels[j]
                 plt.imshow(img, cmap="gray")
@@ -540,13 +537,8 @@ if __name__ == "__main__":
     # d.observe_dataloader(dl)
     # # d.augment_data(dl, [-0.1, 0.1], [-0.1, 0.1], [-15, 15])
 
-    d.create_dataset(["E:\Project\data\Smaller_Processed_Data\Morton", "E:\Project\data\Smaller_Processed_Data\Shenzhen",
-                      "E:\Project\data\Smaller_Processed_Data\TBX11K\TB", "E:\Project\data\Smaller_Processed_Data\TBX11K\Sick_non_TB",
-                      "E:\Project\data\Smaller_Processed_Data\MP"],
-                     40, 36, "E:\Project\data\Dataloaders\Initial_new_encoder_384",
-                     negative_split_percentage=0.65)
-
-
+    d.create_dataset(["E:\Project\data\Collected_Filtered_Data\Shenzhen\Segmented\TB\segmented", "E:\Project\data\Collected_Filtered_Data\Shenzhen\Segmented\Healthy\segmented"],
+                     10, 18, "E:\Project\TESTING\SEGMENTATION_TESTING\dataloaders")
 
 
     # num = d.get_num_partitions()

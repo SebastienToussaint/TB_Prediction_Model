@@ -23,6 +23,7 @@ save_path = Path(save_path).resolve()
 if template_type.upper() in ["TRAIN", "TRAINER", "TRAINING"]:
     lines = [
         "model_path=''                   # If left empty, will create model from scratch\n",
+        "model_template_path=''          # Path to model architecture template. If left empty, will create a standard model\n"
         "model_save_directory=''\n",
         "model_save_name=model.pkl\n",
         "dataloaders_path=''\n",

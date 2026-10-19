@@ -1,4 +1,5 @@
 import sys
+from os import cpu_count
 from pathlib import Path
 import numpy as np
 from utilities.directory_handling import verify_directory
@@ -48,22 +49,8 @@ def standardize_image(image_path, save_path, target_width, target_height):
 
     cv2.imwrite(str(save_path) + "/" + extract_filename_from_path(image_path, 1) + ".png", resized_image, [cv2.IMWRITE_PNG_COMPRESSION, 0])
 
-
-if __name__ == "__main__":
-    if len(sys.argv) != 5 :
-        print("ERROR: Incorrect arguments provided\n"
-              "Usage: make standardize_images ARGS='<images_directory> <save_directory> <target_width> <target_height>")
-        quit()
-
-    target_directory = Path(sys.argv[1]).resolve()
-    save_directory = Path(sys.argv[2]).resolve()
-    resize_width = int(sys.argv[3])
-    resize_height = int(sys.argv[4])
-
-    verify_directory(target_directory, 0)
-    verify_directory(target_directory, 2)
-
-
+def multiprocess_standardization_call(target_directory, save_directory, resize_width, resize_height):
+    print("Standardizing images...")
     # Get all paths
     image_paths = list(target_directory.iterdir())
 
@@ -84,6 +71,11 @@ if __name__ == "__main__":
     )
 
     worker_count = os.cpu_count() or 1
+
+    worker_count = int(min(worker_count, len(image_paths)/10)) # At least ten images per worker
+    if worker_count == 0:
+        worker_count = 1
+
     print(f"Using {worker_count} workers.")
 
     with ProcessPoolExecutor(max_workers=worker_count) as executor:
@@ -94,3 +86,22 @@ if __name__ == "__main__":
 
     print("Finished standardizing images.\n"
           f"Standardized images saved in {save_directory}")
+
+if __name__ == "__main__":
+    if len(sys.argv) != 5 :
+        print("ERROR: Incorrect arguments provided\n"
+              "Usage: make standardize_images ARGS='<images_directory> <save_directory> <target_width> <target_height>")
+        quit()
+
+    target_dir = Path(sys.argv[1]).resolve()
+    save_dir = Path(sys.argv[2]).resolve()
+    resize_w = int(sys.argv[3])
+    resize_h = int(sys.argv[4])
+
+    verify_directory(target_dir, 0)
+    verify_directory(target_dir, 2)
+
+    multiprocess_standardization_call(target_dir, save_dir, resize_w, resize_h)
+
+
+
