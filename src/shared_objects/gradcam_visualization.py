@@ -36,16 +36,16 @@ def visualize_gradcam(model, image, target_layer, positive=True):
 if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = shared_objects.models.CNN()
-    model.load("E:\Project\TESTING\SEGMENTATION_TESTING\model/model_87.pkl")
+    model.load("E:\Project\QUALITYCONTROL\TB_PORTALS_SEGMENTS\MODEL/model_3.pkl")
     model.eval()
     model.to(device)
 
     ds = DataStructure()
-    ds.set_native_datapath("E:\Project\TESTING\SEGMENTATION_TESTING\Gradcam_DL")
+    ds.set_native_datapath("E:\Project\QUALITYCONTROL\TB_PORTALS_SEGMENTS\eval_dl")
     dl = ds.get_next_dataloader()
 
 
-    target_layer = model.layers[36]
+    target_layer = model.layers[29]
 
     for images, labels, filenames in dl:
         for i, image in enumerate(images):

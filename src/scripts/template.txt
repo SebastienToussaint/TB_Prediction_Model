@@ -1,9 +1,9 @@
 model_path=''                   # If left empty, will create model from scratch. Will take priority over model_template_path
 model_template_path='E:\Project\TB_Prediction_Model\src\scripts\model_template.txt'          # Path to model architecture template
-model_save_directory='E:\Project\TESTING\SEGMENTATION_TESTING/model/'
-model_save_name=initial_model.pkl
-dataloaders_path='E:\Project\TESTING\SEGMENTATION_TESTING\dataloaders'
-num_epochs=100
+model_save_directory='E:\Project\QUALITYCONTROL\TB_PORTALS_SEGMENTS\MODEL'
+model_save_name=segment_filtration_model.pkl
+dataloaders_path='E:\Project\QUALITYCONTROL\TB_PORTALS_SEGMENTS\DATALOADERS'
+num_epochs=20
 evaluation_partitions=1          # How many dataloaders should be reserved for evaluation every epoch
 loss_function=BCE
 optimizer=AdamW               # SGD, SGD-Momentum, ADAM, ADAMW, ADAFACTOR, RMSPROP

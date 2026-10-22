@@ -8,9 +8,9 @@ import numpy as np
 
 if __name__ == "__main__":
 
-    if len(sys.argv) != 5:
+    if len(sys.argv) not in [5, 7]:
         print("ERROR in process_raw_data. Incorrect arguments provided.\n"
-              "Usage: python -m *.process_raw_data <images_directory> <output_directory> <final_height> <final_width")
+              "Usage: python -m *.process_raw_data <images_directory> <output_directory> <final_height> <final_width> OPTIONAL -t <num_threads>")
         quit(1)
 
     # Argument management
@@ -37,19 +37,33 @@ if __name__ == "__main__":
             print("Exiting...")
             quit()
 
+    num_threads = None
+    if len(sys.argv) == 7:
+        if not sys.argv[5].upper() == "-T":
+            print("ERROR in process_raw_data. Incorrect arguments provided.\n"
+                  "Usage: python -m *.process_raw_data <images_directory> <output_directory> <final_height> <final_width> OPTIONAL -t <num_threads>")
+            quit(1)
+        else:
+            try:
+                num_threads = int(sys.argv[6])
+            except ValueError:
+                print("ERROR in process_raw_data. Incorrect arguments provided.\n"
+                      f"Num_threads value following -t flag needs to be an integer.")
+                quit(1)
+
 
     # Setup working directories
     verify_directory(target_directory, 2)
 
-    standard_imgs_dir = str(save_directory) + "/images"
+    standard_imgs_dir = str(save_directory) + "/images/"
     verify_directory(standard_imgs_dir, 2)
 
-    default_mask_dir = str(save_directory) + "/masks/default/"
-    verify_directory(default_mask_dir, 2)
-
-    normalized_mask_dir = str(save_directory) + "/masks/normalized/"
-    verify_directory(normalized_mask_dir, 2)
-
+    # default_mask_dir = str(save_directory) + "/masks/default/"
+    # verify_directory(default_mask_dir, 2)
+    #
+    # normalized_mask_dir = str(save_directory) + "/masks/normalized/"
+    # verify_directory(normalized_mask_dir, 2)
+    #
     # segmented_images_dir = str(save_directory) + "/segmented/"
     # verify_directory(segmented_images_dir, 2)
 
@@ -58,36 +72,36 @@ if __name__ == "__main__":
     standardize_images.multiprocess_standardization_call(target_directory=target_directory,
                                                          save_directory=standard_imgs_dir,
                                                          resize_width=512,
-                                                         resize_height=512)
+                                                         resize_height=512,
+                                                         num_threads=num_threads)
 
-    # QC here to check if all images correctly resized
-    print("Performing QC on standardized_images")
-    for file in Path(standard_imgs_dir).iterdir():
-        if not str(file).endswith(".png"):
-            print(f"Non png file found at {file}")
-            continue
-
-        img = cv2.imread(file, cv2.IMREAD_UNCHANGED)
-        if not img.shape == (512, 512) or not img.dtype == np.uint16 or not img.ndim == 2:
-            print(f"Reprocessing image {file}")
-            standardize_images.standardize_image(file, standard_imgs_dir, 512, 512)
-
+    # print("Performing QC on standardized_images")
+    # for file in Path(standard_imgs_dir).iterdir():
+    #     if not str(file).endswith(".png"):
+    #         print(f"Non png file found at {file}")
+    #         continue
+    #
+    #     img = cv2.imread(file, cv2.IMREAD_UNCHANGED)
+    #     if not img.shape == (512, 512) or not img.dtype == np.uint16 or not img.ndim == 2:
+    #         print(f"Reprocessing image {file}")
+    #         standardize_images.standardize_image(file, standard_imgs_dir, 512, 512)
 
 
-    # Generate masks
-    print("Generating masks")
-    generate_masks._external_call_generate_masks(standard_imgs_dir, default_mask_dir)
 
-    # Normalize masks
-    print("Normalizing masks")
-    normalize_masks._external_call_normalize_mask(default_mask_dir, normalized_mask_dir)
-
-    # Apply masks
-    print("Applying masks")
-    apply_masks._external_call_apply_masks(standard_imgs_dir, normalized_mask_dir, standard_imgs_dir)
-
-    # Rescale segmented images
-    print("Resizing images")
-    adjust_size._external_call_resize_images(standard_imgs_dir, final_width, final_height)
+    # # Generate masks
+    # print("Generating masks")
+    # generate_masks._external_call_generate_masks(standard_imgs_dir, default_mask_dir)
+    #
+    # # Normalize masks
+    # print("Normalizing masks")
+    # normalize_masks._external_call_normalize_mask(default_mask_dir, normalized_mask_dir)
+    #
+    # # Apply masks
+    # print("Applying masks")
+    # apply_masks._external_call_apply_masks(standard_imgs_dir, normalized_mask_dir, segmented_images_dir)
+    #
+    # # Rescale segmented images
+    # print("Resizing images")
+    # adjust_size._external_call_resize_images(segmented_images_dir, final_width, final_height)
 
     print("Finished processing images.")

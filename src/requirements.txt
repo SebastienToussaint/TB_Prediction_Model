@@ -1,4 +1,5 @@
 scipy~=1.18.0
+grad-cam
 opencv-python~=5.0.0.93
 numpy~=2.5.1
 pillow~=12.3.0
@@ -10,7 +11,12 @@ pympler
 python-gdcm
 pylibjpeg-libjpeg>=2.1
 pylibjpeg>=2.0
+torchxrayvision
+scikit-image
 
 # test dataset libs
 h5py
 gdown
+
+
+# python -m pip show opencv-python opencv-python-headless  -> for cv2 error with gradcam

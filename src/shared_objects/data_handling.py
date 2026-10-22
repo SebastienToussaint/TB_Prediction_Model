@@ -537,8 +537,9 @@ if __name__ == "__main__":
     # d.observe_dataloader(dl)
     # # d.augment_data(dl, [-0.1, 0.1], [-0.1, 0.1], [-15, 15])
 
-    d.create_dataset(["E:\Project\data\Collected_Filtered_Data\Shenzhen\Segmented\TB\segmented", "E:\Project\data\Collected_Filtered_Data\Shenzhen\Segmented\Healthy\segmented"],
-                     10, 18, "E:\Project\TESTING\SEGMENTATION_TESTING\dataloaders")
+    d.create_dataset(["E:\Project\data\Split\TrainingData\Shenzhen\TB", "E:\Project\data\Split\TrainingData\Shenzhen\Healthy",
+                      "E:\Project\data\Split\TrainingData\TBX11K\TB", "E:\Project\data\Split\TrainingData\TBX11K\Healthy"],
+                     30, 30, "E:\Project\data\Split\TrainingDataloaders\TBX_SHEN")
 
 
     # num = d.get_num_partitions()

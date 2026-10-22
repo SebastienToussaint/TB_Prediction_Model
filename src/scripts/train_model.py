@@ -38,7 +38,7 @@ if __name__ == "__main__":
         model.load(config["model_path"])
 
 
-    model.print_layer_stack()
+    # model.print_layer_stack()
 
     ds = DataStructure()
     ds.set_native_datapath(config["dataloaders_path"])

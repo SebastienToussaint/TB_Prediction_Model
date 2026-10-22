@@ -49,7 +49,7 @@ def standardize_image(image_path, save_path, target_width, target_height):
 
     cv2.imwrite(str(save_path) + "/" + extract_filename_from_path(image_path, 1) + ".png", resized_image, [cv2.IMWRITE_PNG_COMPRESSION, 0])
 
-def multiprocess_standardization_call(target_directory, save_directory, resize_width, resize_height):
+def multiprocess_standardization_call(target_directory, save_directory, resize_width, resize_height, num_threads = None):
     print("Standardizing images...")
     # Get all paths
     image_paths = list(target_directory.iterdir())
@@ -70,9 +70,17 @@ def multiprocess_standardization_call(target_directory, save_directory, resize_w
         target_height=resize_height
     )
 
-    worker_count = os.cpu_count() or 1
 
-    worker_count = int(min(worker_count, len(image_paths)/10)) # At least ten images per worker
+    if num_threads is None:
+        worker_count = os.cpu_count() or 1
+    else:
+        worker_count = min(os.cpu_count(), num_threads)
+
+
+    worker_count = min(round(len(image_paths)/10), worker_count)
+    if worker_count == round(len(image_paths)/10):
+        print(f"Workers set to {worker_count} to allow for at least 10 images per worker")
+
     if worker_count == 0:
         worker_count = 1
 
@@ -84,13 +92,26 @@ def multiprocess_standardization_call(target_directory, save_directory, resize_w
     # for path in image_paths:
     #     standardize_image(path, save_directory, resize_width, resize_height)
 
+
+    # Quality control because multithreading sometimes leaves one or two unstandardized
+    print("Performing QC on standardized_images")
+    for file in Path(save_directory).iterdir():
+        if not str(file).endswith(".png"):
+            print(f"Non png file found at {file}")
+            continue
+
+        img = cv2.imread(file, cv2.IMREAD_UNCHANGED)
+        if not img.shape == (resize_height, resize_width) or not img.dtype == np.uint16 or not img.ndim == 2:
+            print(f"Reprocessing image {file}")
+            standardize_image(file, save_directory, resize_width, resize_height)
+
     print("Finished standardizing images.\n"
           f"Standardized images saved in {save_directory}")
 
 if __name__ == "__main__":
-    if len(sys.argv) != 5 :
+    if len(sys.argv) not in [5, 7] :
         print("ERROR: Incorrect arguments provided\n"
-              "Usage: make standardize_images ARGS='<images_directory> <save_directory> <target_width> <target_height>")
+              "Usage: make standardize_images ARGS='<images_directory> <save_directory> <target_width> <target_height> OPTIONAL -t <num_threads>")
         quit()
 
     target_dir = Path(sys.argv[1]).resolve()
@@ -101,7 +122,18 @@ if __name__ == "__main__":
     verify_directory(target_dir, 0)
     verify_directory(target_dir, 2)
 
-    multiprocess_standardization_call(target_dir, save_dir, resize_w, resize_h)
+    number_of_threads = None
+    if len(sys.argv) == 7:
+        if not sys.argv[5].upper() == "-T":
+            print("ERROR in process_raw_data. Incorrect arguments provided.\n"
+                  "Usage: python -m *.process_raw_data <images_directory> <output_directory> <final_height> <final_width> OPTIONAL -t <num_threads>")
+            quit(1)
+        else:
+            try:
+                number_of_threads = int(sys.argv[6])
+            except ValueError:
+                print("ERROR in process_raw_data. Incorrect arguments provided.\n"
+                      f"Num_threads value following -t flag needs to be an integer.")
+                quit(1)
 
-
-
+    multiprocess_standardization_call(target_dir, save_dir, resize_w, resize_h, number_of_threads)

@@ -106,7 +106,7 @@ def mirror_image(image: cv2.typing.MatLike):
 
 # TODO: This function
 def transform_image_contrast():
-    # Look at sigmoid based contrast adjustments. Better for x-rays to keep features intact
+    # Increase or decrease brightness by +- 10/15% IMPORTANT
     pass
 
 
