@@ -1,5 +1,5 @@
 import random
-import time
+import numpy as np
 import torch
 from pympler.asizeof import asizeof
 from torch import nn
@@ -16,27 +16,14 @@ from utilities.array_handling import flatten_list
 import matplotlib.pyplot as plt
 
 
-def write_evaluations(inferred_probabilities, truth_labels, cutoff_value, target_sensitivity,output_directory, round_values=4, _no_output=False):
+def write_evaluations(inferred_probabilities, truth_labels, cutoff_value,output_directory, round_values=4, _no_output=False):
 
-    print("Calculating evaluation metrics...")
+    if not _no_output:
+        print("Calculating evaluation metrics...")
 
-    if target_sensitivity and cutoff_value:
-        print("WARNING in write_evaluations.\n"
-              "cutoff_value and target_sensitivity are both set. cutoff_value will be used.\n"
-              "If target_sensitivity should be used to calculate the cutoff, set cutoff value to None")
-        target_sensitivity = None
-    elif cutoff_value:
-        print(f"Using cutoff value of {cutoff_value}")
-    elif target_sensitivity:
-        print(f"Using target sensitivity of {target_sensitivity} to calculate threshold")
-    else:
-        print("ERROR in write_evaluations.\n"
-              "one of cutoff_value or target_sensitivity needs to be set.")
-        quit()
 
-    if target_sensitivity is not None:
-        cutoff_value = roc_curve.get_threshold_for_sensitivity(inferred_probabilities, truth_labels, target_sensitivity)
-    elif str(cutoff_value).upper() == "J":
+
+    if str(cutoff_value).upper() == "J":
         cutoff_value = roc_curve.get_youdens_j_point(inferred_probabilities, truth_labels)
 
 
@@ -117,13 +104,13 @@ def infer_labels_cuda(model, data):
 
     with torch.inference_mode():
         img = data[0]
-        inferred_logits = model(img.unsqueeze(0).unsqueeze(0)).squeeze()
+        inferred_logits = model(img.unsqueeze(0)).squeeze()
         inferred_prediction_values = torch.sigmoid(inferred_logits)
 
         return [inferred_prediction_values.detach().cpu().tolist(), data[1].detach().cpu().tolist()]
 
 
-def run_bootstrap_evaluation(repetitions: int, model: nn.Module, ds: DataStructure, output_directory, device: str = "cpu"):
+def run_bootstrap_evaluation(repetitions: int, model: nn.Module, ds: DataStructure, output_directory, cutoff,device: str = "cpu"):
     print(f"Running bootstrap evaluation on model using {device}...")
 
     # Get Data
@@ -142,8 +129,9 @@ def run_bootstrap_evaluation(repetitions: int, model: nn.Module, ds: DataStructu
 
     model = model.to(device)
     inferred_data = []
-    time_1 = time.time()
+
     for i in range(repetitions):
+        print(f"Bootstrapping fold {i+1} of {repetitions}")
         inferred_data.append([])
         # Get indices
         selected_indices = get_sample_indices(len(image_packages), len(image_packages))
@@ -152,17 +140,57 @@ def run_bootstrap_evaluation(repetitions: int, model: nn.Module, ds: DataStructu
         for idx in selected_indices:
             inferred_data[i].append(infer_labels_cuda(model, image_packages[idx]))
 
-    print(time.time() - time_1)
 
-    time_1 = time.time()
     metrics = []
     # Get metrics
     for chunk in inferred_data:
         metrics.append(
-            write_evaluations([package[0] for package in chunk], [package[1] for package in chunk], 0.5, "", 3, True))
+            write_evaluations(inferred_probabilities=[package[0] for package in chunk],
+                              truth_labels=[package[1] for package in chunk],
+                              cutoff_value=cutoff,
+                              output_directory="",
+                              round_values=3,
+                              _no_output=True))
 
-    print(metrics)
-    print(time.time() - time_1)
+
+    accuracies = []
+    balanced_accuracies = []
+    mcc = []
+    roc_auc = []
+    sensitivities = []
+    specificities = []
+    precisions = []
+    pr_auc = []
+
+    for metric in metrics:
+        accuracies.append(metric[0][1])
+        balanced_accuracies.append(metric[1][1])
+        mcc.append(metric[2][1])
+        roc_auc.append(metric[3][1])
+        sensitivities.append(metric[4][1])
+        specificities.append(metric[5][1])
+        precisions.append(metric[6][1])
+        pr_auc.append(metric[7][1])
+
+
+    bootstrapped_metrics = []
+    bootstrapped_metrics.append(["Accuracy:", f"{round(np.mean(accuracies), 3)} ± {round(np.std(accuracies), 4)}"])
+    bootstrapped_metrics.append(["Balanced Accuracy:", f"{round(np.mean(balanced_accuracies), 3)} ± {round(np.std(balanced_accuracies), 4)}"])
+    bootstrapped_metrics.append(["Mathews Correlation Coefficient:", f"{round(np.mean(mcc), 3)} ± {round(np.std(mcc), 4)}"])
+    bootstrapped_metrics.append(["ROC-AUC:", f"{round(np.mean(roc_auc), 3)} ± {round(np.std(roc_auc), 4)}"])
+    bootstrapped_metrics.append(["Sensitivity:", f"{round(np.mean(sensitivities), 3)} ± {round(np.std(sensitivities), 4)}"])
+    bootstrapped_metrics.append(["Specificity:", f"{round(np.mean(specificities), 3)} ± {round(np.std(specificities), 4)}"])
+    bootstrapped_metrics.append(["Precision:", f"{round(np.mean(precisions), 3)} ± {round(np.std(precisions), 4)}"])
+    bootstrapped_metrics.append(["PR-AUC:", f"{round(np.mean(pr_auc), 3)} ± {round(np.std(pr_auc), 4)}"])
+    bootstrapped_metrics.append(["Cutoff:", f"{cutoff}"])
+
+
+    with open(str(output_directory) + "/bootstrapped_evaluations.csv", "w", newline="") as file:
+        csv_writer = csv.writer(file)
+        csv_writer.writerows(bootstrapped_metrics)
+
+    print(f"Finished bootstrap evaluation.\n"
+          f"Metrics saved at {str(output_directory) + "/bootstrapped_evaluations.csv"}")
 
 
 def run_evaluation(model: nn.Module, ds: DataStructure, cutoff_value, output_directory, device: str = "cpu",
@@ -197,7 +225,7 @@ def run_evaluation(model: nn.Module, ds: DataStructure, cutoff_value, output_dir
             for images, labels, filepaths in partition:
                 images, labels = images.to(device), labels.to(device)
 
-                images = images.unsqueeze(1)
+                # images = images.unsqueeze(1)
 
                 inferred_logits = model(images).squeeze()
                 inferred_prediction_values = torch.sigmoid(inferred_logits)  # Round these to get labels
@@ -222,9 +250,9 @@ def run_evaluation(model: nn.Module, ds: DataStructure, cutoff_value, output_dir
 
 if __name__ == "__main__":
     model = CNN()
-    model.load("E:\Project\Savefiles\Models\Retrained_model\model_SickVsTB_retrained.pkl")
+    model.load("E:\Project\Savefiles\Final_Segmented_Models\SHENTBX_TBvsHealthy\shen_tbx_model_HvTB.pkl")
     datas = DataStructure()
 
-    datas.set_native_datapath("E:\Project\TESTING\Data\Dataloaders\Test")
-    run_bootstrap_evaluation(5, model, datas, "", "cuda")
+    datas.set_native_datapath("E:\Project\data\Split\TrainingDataloaders\TBX_SHEN_HvTB_EVAL")
+    run_bootstrap_evaluation(500, model, datas, "E:\Project\Savefiles\Final_Segmented_Models\SHENTBX_TBvsHealthy/", 0.411,"cuda")
     # run_evaluation()

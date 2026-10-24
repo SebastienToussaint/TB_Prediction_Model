@@ -36,12 +36,12 @@ def visualize_gradcam(model, image, target_layer, positive=True):
 if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = shared_objects.models.CNN()
-    model.load("E:\Project\QUALITYCONTROL\TB_PORTALS_SEGMENTS\MODEL/model_3.pkl")
+    model.load("E:\Project\Savefiles\Final_Segmented_Models\SHENTBX_TBvsHealthy\shen_tbx_model_HvTB.pkl")
     model.eval()
     model.to(device)
 
     ds = DataStructure()
-    ds.set_native_datapath("E:\Project\QUALITYCONTROL\TB_PORTALS_SEGMENTS\eval_dl")
+    ds.set_native_datapath("E:\Project\data\Split\TrainingDataloaders\TBX_SHEN_HvTB_EVAL/")
     dl = ds.get_next_dataloader()
 
 
