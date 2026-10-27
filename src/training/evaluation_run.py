@@ -239,7 +239,6 @@ def run_evaluation(model: nn.Module, ds: DataStructure, cutoff_value, output_dir
         write_evaluations(flatten_list(inferred_probs),
                           flatten_list(truth_labels),
                           cutoff_value,
-                          target_sensitivity,
                           output_directory,
                           metrics_decimal_places)
         return True

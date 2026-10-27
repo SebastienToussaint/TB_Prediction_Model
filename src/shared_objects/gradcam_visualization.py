@@ -36,16 +36,18 @@ def visualize_gradcam(model, image, target_layer, positive=True):
 if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = shared_objects.models.CNN()
-    model.load("E:\Project\Savefiles\Final_Segmented_Models\SHENTBX_TBvsHealthy\shen_tbx_model_HvTB.pkl")
+    model.load("E:\Project\Report/figures\mask_shortcutting\Model\intervals\model_7.pkl")
     model.eval()
     model.to(device)
 
+    model.print_layer_stack()
+
     ds = DataStructure()
-    ds.set_native_datapath("E:\Project\data\Split\TrainingDataloaders\TBX_SHEN_HvTB_EVAL/")
+    ds.set_native_datapath("E:\Project\Report/figures\mask_shortcutting\eval_dl")
     dl = ds.get_next_dataloader()
 
 
-    target_layer = model.layers[29]
+    target_layer = model.layers[34] # 34
 
     for images, labels, filenames in dl:
         for i, image in enumerate(images):
@@ -56,18 +58,21 @@ if __name__ == "__main__":
 
             pred = int(prob>0.5)
 
-
             heatmap, overlay = visualize_gradcam(model,image, target_layer, positive=bool(pred))
 
             disp = image.squeeze().cpu().numpy()
 
-            fig, axes = plt.subplots(1, 3, figsize=(12, 4))
+            fig, axes = plt.subplots(1, 2, figsize=(12, 6))
             axes[0].imshow(disp, cmap="gray")
-            axes[1].imshow(heatmap, cmap="jet", vmin=0, vmax=1)
-            axes[2].imshow(overlay)
-            fig.suptitle(f"{utilities.string_manipulation.extract_filename_from_path(filenames[i], 0)} | "
-                         f"label={label} pred={pred}| P(Positive)={prob:.3f}")
-
+            axes[0].set_title("Original CXR")
+            axes[0].axis("off")
+            # axes[1].imshow(heatmap, cmap="jet", vmin=0, vmax=1)
+            axes[1].imshow(overlay)
+            axes[1].set_title("Heatmap overlay")
+            axes[1].axis("off")
+            # fig.suptitle(f"{utilities.string_manipulation.extract_filename_from_path(filenames[i], 0)} | "
+            #              f"label={label} pred={pred}| P(Positive)={prob:.3f}")
 
             plt.show()
+
             plt.close(fig)

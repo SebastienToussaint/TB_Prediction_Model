@@ -537,18 +537,10 @@ if __name__ == "__main__":
     # d.observe_dataloader(dl)
     # # d.augment_data(dl, [-0.1, 0.1], [-0.1, 0.1], [-15, 15])
 
-    d.create_dataset(["E:\Project\data\Split\TrainingData\Morton\TB", "E:\Project\data\Split\TrainingData\MP\TB",
-                      "E:\Project\data\Split\TrainingData\Shenzhen\TB", "E:\Project\data\Split\TrainingData\TBX11K\TB",
-                      "E:\Project\data\Split\TrainingData\TB_PORTALS\TB",
-
-
-                      "E:\Project\data\Split\TrainingData\TBX11K\Sick_non_TB",
-                      "E:\Project\data\Split\TrainingData\Shenzhen\Healthy",
-                      "E:\Project\data\Split\TrainingData\XRAY14\Sick_non_TB",
-                      "E:\Project\data\Split\TrainingData\TBX11K\Healthy"
+    d.create_dataset(["E:\Project\Report/figures\mask_shortcutting\Images/0",
+                      "E:\Project\Report/figures\mask_shortcutting\Images/1"
                       ],
-                     80, 40, "E:\Project\data\Split\TrainingDataloaders\ALL_DATASETS_5000_per_class",
-                     number_of_negative_images=5000)
+                     4, 25, "E:\Project\Report/figures\mask_shortcutting\DLs")
 
 
     # num = d.get_num_partitions()

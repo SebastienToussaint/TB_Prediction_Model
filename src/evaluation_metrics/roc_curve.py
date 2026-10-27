@@ -78,7 +78,9 @@ def draw_roc_curve(inferred_probabilities: list, truth_labels: list, save_direct
 
 
 
-    plt.axvline(youdens_j_point, linestyle="--")
+    # plt.axvline(youdens_j_point, linestyle="--")
+
+    plt.scatter(youdens_j_point, y[np.abs(np.array(x) - youdens_j_point).argmin()], marker="o", color="red", zorder=3)
     plt.title("ROC CURVE")
     plt.xlabel("False positive rate")
     plt.ylabel("True positive rate")
@@ -92,9 +94,7 @@ def calculate_roc_auc(inferred_probabilities: list, truth_labels: list):
     x = []
     y = []
 
-
-
-    get_threshold_for_sensitivity(inferred_probabilities, truth_labels, 0.8)
+    # get_threshold_for_sensitivity(inferred_probabilities, truth_labels, 0.8)
 
     for coord in coordinates:
         x.append(coord[0])
@@ -110,12 +110,14 @@ def draw_multiple_model_roc_curve(inferred_probabilities: list, truth_labels: li
         x = []
         y = []
         coordinates = calculate_roc_values(model_probabilities, truth_labels[i])
+        # youdens_j_point = get_youdens_j_point(model_probabilities, truth_labels[i])
 
         for coord in coordinates:
             x.append(coord[0])
             y.append(coord[1])
 
         plt.plot(x, y, linewidth=2)
+        # plt.scatter(youdens_j_point, y[np.abs(np.array(x) - youdens_j_point).argmin()], marker="o", color="red", zorder=3)
 
     plt.legend(["Random classifier"] + model_names, frameon=False)
     plt.title("ROC curve comparison of multiple models")
