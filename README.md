@@ -4,6 +4,8 @@ Basic running instructions:
 
 Requires make. If not installed, run "sudo apt install make" (for linux) (Restart terminal and continue)
 
+IMPORTANT: Calling scripts through make does not work due to file restructuring. To call scripts use python -m path1.path2.script(.py, dont include .py) ARGS.
+make install does still work
 1. cd src
 2. make install (this will install all the dependencies needed)
 3. make xyz ARGS="arg1 arg2 arg3" (where xyz is the name of the job you want to run. run "make help" to see list of possible jobs)
